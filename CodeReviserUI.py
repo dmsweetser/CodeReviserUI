@@ -7,12 +7,17 @@ import tempfile
 import uuid
 import shutil
 import re
+import sys
 import urllib.request
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from lib import revise_prompt, text_diff
+from lib import revise_prompt, compare_texts, revise_code, build_readme
+from urllib.error import HTTPError
+from llama_cpp import Llama
+from multiprocessing import Process
 
 # Initialize Flask app and configure settings
 app = Flask(__name__)
+app.secret_key = 'GOISDFYuizxdfjkljaskdf@#$517389&*(aasdfjkl;)'  
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['REVISIONS_DB'] = 'revisions.db'
 app.config['MODEL_URL'] = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_S.gguf"
@@ -22,9 +27,12 @@ app.config['REVISIONS_PER_PAGE'] = 10  # Number of revisions to display per page
 app.config['SESSION_TYPE'] = 'filesystem'  # Use in-memory session store for simplicity
 app.config['MAX_FILE_SIZE'] = 5 * 1024 * 1024  # Maximum file size limit (5MB)
 
-# Initialize Flask-Login and SQLite database, download model if not present locally
-login_manager = LoginManager()
-login_manager.init_app(app)
+class User(UserMixin):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+
+current_user = User(1, "developer")
 
 def init_db():
     conn = sqlite3.connect(app.config['REVISIONS_DB'])
@@ -85,53 +93,21 @@ def load_model():
 
 load_model()
 
-# Login manager and user loader
-@login_manager.user_loader
-def load_user(user_id):
-    conn = sqlite3.connect(app.config['REVISIONS_DB'])
-    c = conn.cursor()
-    user = c.execute("SELECT * FROM revisions WHERE id=?", (int(user_id),)).fetchone()
-    if not user:
-        return None
-    user_data = {k: v for k, v in user}
-    del user_data['id']
-    return User(**user_data)
 
-# Authentication routes
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    """Register a new user."""
-    if request.method == 'POST':
-        flash("Registration successful.", "success")
-        return redirect(url_for('login'))
-    return render_template('register.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Log in a user."""
-    if request.method == 'POST':
-        user = User(username='username', id=1)
-        login_user(user)
-        return redirect(url_for('index'))
-    return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    """Log out the current user."""
-    logout_user()
-    return redirect(url_for('index'))
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # Queue code for revision and save it in SQLite database
 @app.route('/queue', methods=['POST'])
-@login_required
 def queue():
     """Queue a file for revision and save it in the SQLite database."""
     if 'file' not in request.files or not request.files['file'].filename:
         abort(400, description="No file part")
 
     file = request.files['file']
-    if file.size > app.config['MAX_FILE_SIZE']:
+    file_size = len(file.getvalue())
+    if file_size > app.config['MAX_FILE_SIZE']:
         abort(413, description="File size exceeds the limit.")
 
     filename = str(uuid.uuid4()) + '.' + file.filename.split('.')[-1]
@@ -140,28 +116,37 @@ def queue():
     except IOError as e:
         abort(500, description=str(e))
 
-    user_id = current_user.id  # Get user ID from Flask-Login session for authentication
-    revision = revise_code(filename, user_id)  # Revise the code using LLM model
-    save_revision(filename, user_id, revision)  # Save the revision in SQLite database
-    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # Delete the original file
-    return jsonify({'status': 'success', 'message': 'Code revised and saved.'})
+    user_id = current_user.id
+    # Start a new process for the background job
+    background_process = Process(target=background_revision_job, args=(filename, user_id))
+    background_process.start()
+
+    return jsonify({'status': 'success', 'message': 'Code revision queued.'})
+
+
+def background_revision_job(filename, user_id):
+    # This function runs in a separate process
+    revision = generate_code_revision(filename, user_id)
+    save_revision(filename, user_id, revision)
+    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
 # Revise prompt using LLM model
-@app.route('/revise-prompt', methods=['POST'])
-@login_required
+@app.route('/revise-prompt', methods=['GET', 'POST'])
 def revise_prompt():
-    """Revise a given prompt using the LLM model."""
-    if not request.is_json or not 'prompt' in request.json:
-        abort(400, description="No prompt provided")
+    if request.method == 'GET':
+        return render_template('revise_prompt.html')
+    elif request.method == 'POST':
+        """Revise a given prompt using the LLM model."""
+        if not request.is_json or not 'prompt' in request.json:
+            abort(400, description="No prompt provided")
 
-    data = request.get_json()
-    prompt = data['prompt']
-    revision = lib.revise_prompt(prompt, llama_model)
-    return jsonify({'status': 'success', 'message': 'Prompt revised.', 'revision': revision})
-
+        data = request.get_json()
+        prompt = data['prompt']
+        revision = revise_prompt.run(prompt, llama_model)
+        return jsonify({'status': 'success', 'message': 'Prompt revised.', 'revision': revision})
+    
 # View revisions and download individual revisions
 @app.route('/revisions/<string:filename>')
-@login_required
 def view_revisions(filename):
     """Display the given file's revisions."""
     page = int(request.args.get('page', 1)) * app.config['REVISIONS_PER_PAGE']
@@ -177,7 +162,6 @@ def view_revisions(filename):
     return render_template('revisions.html', filename=filename, revisions=revisions, total_revisions=total_revisions, page=page)
 
 @app.route('/download/<string:filename>/<int:revision_id>')
-@login_required
 def download_revision(filename, revision_id):
     """Download a specific revision of the given file."""
     conn = sqlite3.connect(app.config['REVISIONS_DB'])
@@ -194,7 +178,6 @@ def download_revision(filename, revision_id):
 
 # Download all revisions of a file
 @app.route('/download/all/<string:filename>')
-@login_required
 def download_all_revisions(filename):
     """Download all revisions of the given file."""
     conn = sqlite3.connect(app.config['REVISIONS_DB'])
@@ -222,7 +205,6 @@ def download_all_revisions(filename):
 
 # Delete a specific revision of the given file
 @app.route('/delete/<string:filename>/<int:revision_id>')
-@login_required
 def delete_revision(filename, revision_id):
     """Delete a specific revision of the given file."""
     conn = sqlite3.connect(app.config['REVISIONS_DB'])
@@ -233,11 +215,11 @@ def delete_revision(filename, revision_id):
     return jsonify({'status': 'success', 'message': 'Revision deleted.'})
 
 # Helper functions for revising code and saving revisions in SQLite database
-def revise_code(filename, user_id):
+def generate_code_revision(filename, user_id):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     with open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'r') as file:
         code = file.read()
-    revision = lib.revise_code(code, llm)
+    revision = revise_code.run(code, llm)
     save_revision(filename, user_id, revision)  # Save the revision in SQLite database
 
 def save_revision(filename, user_id, revision):
@@ -259,7 +241,6 @@ def handle_http_errors(e):
 
 # Route for handling paginated download of multiple revisions at once
 @app.route('/download/<string:filename>/page/<int:page>')
-@login_required
 def download_revisions(filename, page):
     """Download multiple revisions of the given file in one request."""
     offset = (page - 1) * app.config['REVISIONS_PER_PAGE']

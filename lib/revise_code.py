@@ -1,11 +1,11 @@
 import os
 import re
-from llama_cpp import Llama  # Assuming llama_cpp is the module containing the Llama class
+from llama_cpp import Llama
 
 # Call the function to revise the prompt
 # revised_code = revise_code(original_code, llama_model)
 
-def revise_code(original_code, llama_model):
+def run(original_code, llama_model):
 
     # Alternate generation and cleanup
     if "TODO" in original_code or "PLACEHOLDER" in original_code:
@@ -18,7 +18,7 @@ def revise_code(original_code, llama_model):
     revised_code = response['choices'][0]['message']['content']
 
     pattern = re.compile(r'(\w+)(.*?)', re.DOTALL)
-    match = re.search(pattern, original_text)
+    match = re.search(pattern, original_code)
     if match:
         revised_code = match.group(2)
 

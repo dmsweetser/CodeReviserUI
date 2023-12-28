@@ -3,32 +3,40 @@
 {% block title %}Revisions - Your App{% endblock %}
 
 {% block content %}
+<div class="container mt-4">
     <h2>Revisions for {{ filename }}</h2>
 
     {% if revisions %}
-        <ul>
+        <ul class="list-group">
             {% for revision in revisions %}
-                <li>
-                    <p>Revision ID: {{ revision[0] }}</p>
-                    <pre>{{ revision[1] }}</pre>
-                    <a href="{{ url_for('download_revision', filename=filename, revision_id=revision[0]) }}">Download</a>
-                    <a href="{{ url_for('delete_revision', filename=filename, revision_id=revision[0]) }}">Delete</a>
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1">Revision ID: {{ revision[0] }}</p>
+                            <pre>{{ revision[1] }}</pre>
+                        </div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('download_revision', filename=filename, revision_id=revision[0]) }}" class="btn btn-info btn-sm">Download</a>
+                            <a href="{{ url_for('delete_revision', filename=filename, revision_id=revision[0]) }}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
 
         {% if total_revisions > REVISIONS_PER_PAGE %}
-            <div>
+            <div class="mt-4">
                 {% if page > 1 %}
-                    <a href="{{ url_for('view_revisions', filename=filename, page=page-1) }}">Previous</a>
+                    <a href="{{ url_for('view_revisions', filename=filename, page=page-1) }}" class="btn btn-secondary">Previous</a>
                 {% endif %}
 
                 {% if total_revisions > page * REVISIONS_PER_PAGE %}
-                    <a href="{{ url_for('view_revisions', filename=filename, page=page+1) }}">Next</a>
+                    <a href="{{ url_for('view_revisions', filename=filename, page=page+1) }}" class="btn btn-secondary ms-2">Next</a>
                 {% endif %}
             </div>
         {% endif %}
     {% else %}
         <p>No revisions found for this file.</p>
     {% endif %}
+</div>
 {% endblock %}

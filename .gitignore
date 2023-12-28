@@ -1,0 +1,5 @@
+venv/
+uploads/*
+!uploads/placeholder.txt
+revisions.db
+lib/__pycache__

@@ -4,32 +4,56 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Your App{% endblock %}</title>
-    <!-- Add your CSS links here -->
+    <title>{% block title %}Code Reviser UI{% endblock %}</title>
+
+    <!-- Bootstrap CSS CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+
+    <!-- Your custom CSS links -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
 </head>
 <body>
     <header>
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('register') }}">Register</a></li>
-                <li><a href="{{ url_for('login') }}">Login</a></li>
-                <!-- Add more navigation links as needed -->
-            </ul>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">Code Reviser UI</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse w-100" id="navbarNav">
+                    <ul class="navbar-nav w-100">
+                        <li class="nav-item row w-100">
+                            <div class="col-auto">
+                                <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                            </div>
+                            <div class="col-auto">
+                                <a class="nav-link" href="{{ url_for('revise_prompt') }}">Prompt Reviser</a>
+                            </div>                            
+                        </li>
+                        <!-- Add more navigation links as needed -->
+                    </ul>
+                </div>
+            </div>
         </nav>
     </header>
 
     <main role="main">
-        <div class="container">
+        <div class="container mt-4">
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <footer>
-        <p>&copy; 2023 Your App. All rights reserved.</p>
+    <footer class="mt-5">
+        <div class="container">
+            <p class="text-center">License: MIT</p>
+        </div>
     </footer>
-    <!-- Add your JS scripts here -->
+
+    <!-- Bootstrap JS Bundle CDN (Popper.js included) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <!-- Your custom JS scripts -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

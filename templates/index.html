@@ -1,15 +1,61 @@
-<!-- index.html -->
 {% extends "base.html" %}
 
-{% block title %}Home - Your App{% endblock %}
+{% block title %}Dashboard - Code Reviser UI{% endblock %}
 
 {% block content %}
-    <h2>Welcome to Your App</h2>
-    <p>This is the main landing page for your application. Customize this template to add relevant content and features.</p>
-    <p>For example, you might include:</p>
-    <ul>
-        <li>Links to important sections of your app</li>
-        <li>Brief descriptions of key features</li>
-        <li>Call-to-action buttons or prompts</li>
-    </ul>
+<div class="container mt-4">
+    <h2>Dashboard</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h3>My Files</h3>
+            <ul class="list-group">
+                {% for file in user_files %}
+                <li class="list-group-item">
+                    <strong>{{ file.filename }}</strong>
+                    <a href="{{ url_for('view_revisions', filename=file.filename) }}"
+                        class="btn btn-info btn-sm ms-2">View Revisions</a>
+                    <a href="{{ url_for('download_all_revisions', filename=file.filename) }}"
+                        class="btn btn-success btn-sm ms-2">Download All Revisions</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-md-6">
+            <h3>Upload a File</h3>
+            <form method="post" action="{{ url_for('queue') }}" enctype="multipart/form-data">
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="file" name="file" class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h3>Manage Revisions</h3>
+        {% if revisions %}
+        <ul class="list-group">
+            {% for revision in revisions %}
+            <li class="list-group-item">
+                <p>Revision ID: {{ revision.id }}</p>
+                <pre>{{ revision.revision }}</pre>
+                <a href="{{ url_for('download_revision', filename=revision.file_name, revision_id=revision.id) }}"
+                    class="btn btn-info btn-sm ms-2">Download</a>
+                <a href="{{ url_for('delete_revision', filename=revision.file_name, revision_id=revision.id) }}"
+                    class="btn btn-danger btn-sm ms-2">Delete</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No revisions found.</p>
+        {% endif %}
+    </div>
+
+</div>
 {% endblock %}

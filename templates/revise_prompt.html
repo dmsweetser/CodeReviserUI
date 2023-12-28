@@ -1,19 +1,24 @@
-<!-- revise_prompt.html -->
 {% extends "base.html" %}
 
 {% block title %}Revise Prompt - Your App{% endblock %}
 
 {% block content %}
-    <h2>Revise Prompt</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">Revise Prompt</h2>
+
     <form method="post" action="{{ url_for('revise_prompt') }}">
-        {{ form.hidden_tag() }}
-        <label for="prompt">Enter your prompt:</label>
-        <textarea id="prompt" name="prompt" rows="4" cols="50" required></textarea>
-        <button type="submit">Revise</button>
+        <div class="mb-3">
+            <label for="prompt" class="form-label">Enter your prompt:</label>
+            <textarea id="prompt" name="prompt" class="form-control" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Revise</button>
     </form>
 
     {% if revision %}
-        <h3>Revised Prompt:</h3>
-        <p>{{ revision }}</p>
+        <div class="mt-4">
+            <h3>Revised Prompt:</h3>
+            <p>{{ revision }}</p>
+        </div>
     {% endif %}
+</div>
 {% endblock %}
