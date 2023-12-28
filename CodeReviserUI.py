@@ -3,13 +3,13 @@ from flask import Flask, render_template, request, send_file, url_for, flash, re
 import os
 import sqlite3
 import requests
-import joblib
 import tempfile
 import uuid
 import shutil
 import re
 import urllib.request
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from lib import revise_prompt, text_diff
 
 # Initialize Flask app and configure settings
 app = Flask(__name__)
@@ -34,6 +34,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
 
 # Load model
@@ -48,7 +49,36 @@ def load_model():
             print("Failed to download model:", str(e))
             return
     try:
-        llm = joblib.load(app.config['UPLOAD_FOLDER'] + app.config['MODEL_FILENAME'])
+
+        # Define llama.cpp parameters
+        llama_params = {
+            "loader": "llama.cpp",
+            "cpu": False,
+            "threads": 0,
+            "threads_batch": 0,
+            "n_batch": 512,
+            "no_mmap": False,
+            "mlock": False,
+            "no_mul_mat_q": False,
+            "n_gpu_layers": 0,
+            "tensor_split": "",
+            "n_ctx": app.config['MAX_CONTEXT'],
+            "compress_pos_emb": 1,
+            "alpha_value": 1,
+            "rope_freq_base": 0,
+            "numa": False,
+            "model": app.config['MODEL_FILENAME'],
+            "temperature": 1.0,
+            "top_p": 0.99,
+            "top_k": 85,
+            "repetition_penalty": 1.01,
+            "typical_p": 0.68,
+            "tfs": 0.68,
+            "max_tokens": app.config['MAX_CONTEXT']
+        }
+        
+        llm = Llama(app.config['UPLOAD_FOLDER'] + app.config['MODEL_FILENAME'], **llama_params)
+
     except FileNotFoundError:
         print("Model file not found locally, downloading...")
         load_model()
@@ -126,7 +156,7 @@ def revise_prompt():
 
     data = request.get_json()
     prompt = data['prompt']
-    revision = llm.generate(prompt, max_length=app.config['MAX_CONTEXT'], num_beams=5)  # Revise the prompt using LLM model
+    revision = lib.revise_prompt(prompt, llama_model)
     return jsonify({'status': 'success', 'message': 'Prompt revised.', 'revision': revision})
 
 # View revisions and download individual revisions
@@ -207,7 +237,7 @@ def revise_code(filename, user_id):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     with open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'r') as file:
         code = file.read()
-    revision = llm.generate(code, max_length=app.config['MAX_CONTEXT'], num_beams=5)  # Revise the code using LLM model
+    revision = lib.revise_code(code, llm)
     save_revision(filename, user_id, revision)  # Save the revision in SQLite database
 
 def save_revision(filename, user_id, revision):
