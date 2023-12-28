@@ -1,0 +1,19 @@
+<!-- revise_prompt.html -->
+{% extends "base.html" %}
+
+{% block title %}Revise Prompt - Your App{% endblock %}
+
+{% block content %}
+    <h2>Revise Prompt</h2>
+    <form method="post" action="{{ url_for('revise_prompt') }}">
+        {{ form.hidden_tag() }}
+        <label for="prompt">Enter your prompt:</label>
+        <textarea id="prompt" name="prompt" rows="4" cols="50" required></textarea>
+        <button type="submit">Revise</button>
+    </form>
+
+    {% if revision %}
+        <h3>Revised Prompt:</h3>
+        <p>{{ revision }}</p>
+    {% endif %}
+{% endblock %}

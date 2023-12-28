@@ -1,0 +1,6 @@
+llama-cpp-python
+requests
+Flask
+Flask-Login
+Werkzeug
+joblib

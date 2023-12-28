@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Revisions - Your App{% endblock %}
+
+{% block content %}
+    <h2>Revisions for {{ filename }}</h2>
+
+    {% if revisions %}
+        <ul>
+            {% for revision in revisions %}
+                <li>
+                    <p>Revision ID: {{ revision[0] }}</p>
+                    <pre>{{ revision[1] }}</pre>
+                    <a href="{{ url_for('download_revision', filename=filename, revision_id=revision[0]) }}">Download</a>
+                    <a href="{{ url_for('delete_revision', filename=filename, revision_id=revision[0]) }}">Delete</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        {% if total_revisions > REVISIONS_PER_PAGE %}
+            <div>
+                {% if page > 1 %}
+                    <a href="{{ url_for('view_revisions', filename=filename, page=page-1) }}">Previous</a>
+                {% endif %}
+
+                {% if total_revisions > page * REVISIONS_PER_PAGE %}
+                    <a href="{{ url_for('view_revisions', filename=filename, page=page+1) }}">Next</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <p>No revisions found for this file.</p>
+    {% endif %}
+{% endblock %}
