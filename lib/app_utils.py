@@ -6,7 +6,7 @@ import uuid
 from flask import abort
 from llama_cpp import Llama
 from multiprocessing import Process
-from lib import revise_prompt, compare_texts, revise_code, build_readme
+from lib import compare_texts, revise_code, build_readme
 from globals import active_jobs
 
 def init_db(revisions_db):
@@ -113,6 +113,31 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
+def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user):
+    if not filename:
+        abort(400, description="No filename provided")
+
+    file_size = len(file_contents)
+    if file_size > max_file_size:
+        abort(413, description="File size exceeds the limit.")
+
+    file_path = os.path.join(upload_folder, filename)
+    try:
+        with open(file_path, 'wb') as file:
+            file.write(file_contents)
+    except IOError as e:
+        abort(500, description=str(e))
+
+    user_id = current_user.id
+    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, user_id, active_jobs, llm))
+    background_process.start()
+
+    active_jobs.append({
+        'filename': filename,
+        'user_id': user_id,
+        'status': 'Running',
+    })
+
 def process_background_job(revisions_db, upload_folder, filename, user_id, active_jobs, llm):
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
@@ -171,3 +196,40 @@ def delete_revision_file(revisions_db, filename, revision_id, user_id):
     conn.commit()
     conn.close()
     return {'status': 'success', 'message': 'Revision deleted.'}
+
+def update_revision_content(revisions_db, filename, revision_id, user_id, new_content):
+    """Update the content of a specific revision in the SQLite database."""
+    conn = connect_db(revisions_db)
+    c = conn.cursor()
+    c.execute("UPDATE revisions SET revision=? WHERE id=? AND file_name=? AND user_id=?", (new_content, revision_id, filename, user_id))
+    conn.commit()
+    conn.close()
+
+def get_revision_content(revisions_db, filename, revision_id, user_id):
+    """Retrieve the content of a specific revision from the SQLite database."""
+    conn = connect_db(revisions_db)
+    c = conn.cursor()
+    c.execute("SELECT revision FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
+    revision_content = c.fetchone()
+    conn.close()
+    return revision_content[0] if revision_content else None
+
+def get_revision_content_bytes(revisions_db, filename, revision_id, user_id):
+    """Retrieve the content of a specific revision from the SQLite database as bytes."""
+    conn = connect_db(revisions_db)
+    c = conn.cursor()
+    c.execute("SELECT revision FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
+    revision_content = c.fetchone()
+    conn.close()
+    return revision_content[0].encode() if revision_content else None
+
+def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, user_id):
+    """Compare two revisions using the compare_texts.run function."""
+    content1 = get_revision_content(revisions_db, filename, revision_id1, user_id)
+    content2 = get_revision_content(revisions_db, filename, revision_id2, user_id)
+
+    if content1 is not None and content2 is not None:
+        comparison_result = compare_texts.run(content1, content2, context=5, ignore_whitespace=True)
+        return comparison_result
+    else:
+        return None

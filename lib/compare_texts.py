@@ -5,7 +5,7 @@
 # Myers' Diff Algorithm for more advanced text comparison.
 
 # Uncomment and customize the following line if you want to call this script from another script
-# compare_texts("This is the old text.", "This is the new text.", context=5, ignore_whitespace=True)
+# compare_texts.run("This is the old text.", "This is the new text.", context=5, ignore_whitespace=True)
 
 # Import required libraries
 import sys

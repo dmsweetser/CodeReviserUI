@@ -9,7 +9,10 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from app_utils import init_db, load_model, update_job_status, process_background_job, connect_db, get_all_revisions, download_revision_file, delete_revision_file
+from app_utils import init_db, load_model, update_job_status, process_background_job, connect_db
+from app_utils import get_all_revisions, download_revision_file, delete_revision_file, process_file_and_background_job
+from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
+
 from globals import active_jobs
 
 app = Flask(__name__)
@@ -39,71 +42,55 @@ if llm is None:
 
 @app.route('/')
 def index():
-    
     all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
-    
-    # Create new tuples with modified values using a list comprehension
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
-    
     return render_template('index.html', active_jobs=active_jobs, revisions=all_revisions)
 
 @app.route('/queue', methods=['POST'])
 def queue():
-    if 'file' not in request.files or not request.files['file'].filename:
-        abort(400, description="No file part")
-
     file = request.files['file']
-    file_size = len(file.getvalue())
-    if file_size > app.config['MAX_FILE_SIZE']:
-        abort(413, description="File size exceeds the limit.")
-
-    filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    try:
-        file.save(filename)
-    except IOError as e:
-        abort(500, description=str(e))
-
-    user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], file.filename, user_id, active_jobs, llm))
-    background_process.start()
-
-    active_jobs.append({
-        'filename': file.filename,
-        'user_id': user_id,
-        'status': 'Running',
-    })
-
+    filename = file.filename
+    file_contents = file.getvalue()
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user)
     return redirect(url_for('index'))
 
-@app.route('/revise-prompt', methods=['POST'])
-def revise_prompt():
-    if not request.is_json or 'prompt' not in request.json:
-        abort(400, description="No prompt provided")
+@app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
+def edit_revision(filename, revision_id):
+    if request.method == 'GET':
+        revision_content = get_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
+        return render_template('edit_revision.html', filename=filename, revision_id=revision_id, revision_content=revision_content)
+    elif request.method == 'POST':
+        new_content = request.form['new_content']
+        update_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id, new_content)
+        return redirect(url_for('index'))
 
-    data = request.get_json()
-    prompt = data['prompt']
-    revision = revise_prompt.run(prompt, llama_model)
-    return jsonify({'status': 'success', 'message': 'Prompt revised.', 'revision': revision})
+@app.route('/compare-revisions/<string:filename>/<int:revision_id1>/<int:revision_id2>', methods=['GET'])
+def compare_revisions(filename, revision_id1, revision_id2):
+    try:
+        comparison_result = compare_two_revisions(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id1, revision_id2, current_user.id)
+        return render_template('compare_revisions.html', filename=filename, revision_id1=revision_id1, revision_id2=revision_id2, comparison_result=comparison_result)
+    except Exception as e:
+        print(f"Error comparing revisions: {str(e)}")
+        return redirect(url_for('index'))
 
 @app.route('/download/<string:filename>/<int:revision_id>', methods=['GET'])
 def download_revision(filename, revision_id):
     temp_file = download_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-    
-    # Split the filename and extension
     root, extension = secure_filename(filename).rsplit('.', 1)
-
-    # Create the new filename with revision_id
     new_filename = f"{root}_revision_{revision_id}.{extension}"
-
     return send_file(temp_file, as_attachment=True, download_name=new_filename)
 
-# Delete a specific revision of the given file
+@app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['GET'])
+def revise_from_revision(filename, revision_id):
+    revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user)
+    return redirect(url_for('index'))
+
 @app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])
 def delete_revision(filename, revision_id):
     result = delete_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
     return redirect(url_for('index'))
 
-# Handle model loading errors in download routes using try-except blocks
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):
     abort(500, description="Model not found")
