@@ -70,13 +70,40 @@ def update_job_status(active_jobs, filename, user_id, status):
         if job['filename'] == filename and job['user_id'] == user_id:
             job['status'] = status
 
-# Helper functions for revising code and saving revisions in SQLite database
-def generate_code_revision(revisions_db, upload_folder, filename, user_id):
+def generate_code_revision(revisions_db, upload_folder, filename, user_id, llm):
     """Revise the given file using the LLM model and save it in the SQLite database."""
-    with open(os.path.join(upload_folder, filename), 'r') as file:
-        code = file.read()
-    revision = revise_code.run(code, llm)
-    save_revision(filename, user_id, revision)  # Save the revision in SQLite database
+    file_path = os.path.join(upload_folder, filename)
+    
+    try:
+        with open(file_path, 'r') as file:
+            code = file.read()
+
+        # Check if a revision already exists for the file
+        existing_revision = get_latest_revision(filename, user_id, revisions_db)
+
+        if existing_revision:
+            revision = revise_code.run(existing_revision, llm)
+        else:
+            # If no initial revision exists, save the current code as the initial revision
+            save_revision(revisions_db, filename, user_id, code)
+            revision = revise_code.run(code, llm)
+
+        save_revision(revisions_db, filename, user_id, revision)  # Save the revised code in SQLite database
+
+    except FileNotFoundError:
+        handle_job_error(active_jobs, filename, user_id, f"File not found: {file_path}")
+    except Exception as e:
+        handle_job_error(active_jobs, filename, user_id, str(e))
+
+# Helper function to get the latest revision for a given file and user
+def get_latest_revision(filename, user_id, revisions_db):
+    conn = connect_db(revisions_db)
+    c = conn.cursor()
+    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT 1", (filename, user_id))
+    revision = c.fetchone()
+    conn.close()
+    return revision[0] if revision else None
+
 
 def save_revision(revisions_db, filename, user_id, revision):
     """Save a new revision of the given file in the SQLite database."""
