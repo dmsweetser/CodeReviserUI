@@ -6,6 +6,9 @@ import uuid
 from flask_login import LoginManager, UserMixin, current_user
 from multiprocessing import Process
 from urllib.error import HTTPError
+from urllib.parse import quote_plus, unquote_plus
+from werkzeug.utils import secure_filename
+
 from app_utils import init_db, load_model, update_job_status, process_background_job, connect_db, get_all_revisions, download_revision_file, delete_revision_file
 from globals import active_jobs
 
@@ -19,7 +22,7 @@ app.config['MODEL_FILENAME'] = "mistral-7b-instruct-v0.2.Q5_K_S.gguf"
 app.config['MAX_CONTEXT'] = 32768
 app.config['REVISIONS_PER_PAGE'] = 10
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['MAX_FILE_SIZE'] = 5 * 1024 * 1024
+app.config['MAX_FILE_SIZE'] = 10 * 1024 * 1024
 
 class User(UserMixin):
     def __init__(self, id, username):
@@ -36,7 +39,13 @@ if llm is None:
 
 @app.route('/')
 def index():
-    return render_template('index.html', active_jobs=active_jobs, revisions=get_all_revisions(current_user.id, app.config['REVISIONS_DB']))
+    
+    all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
+    
+    # Create new tuples with modified values using a list comprehension
+    all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
+    
+    return render_template('index.html', active_jobs=active_jobs, revisions=all_revisions)
 
 @app.route('/queue', methods=['POST'])
 def queue():
@@ -55,11 +64,11 @@ def queue():
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(app.config['REVISIONS_DB'], filename, user_id, active_jobs, llm))
+    background_process = Process(target=process_background_job, args=(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], file.filename, user_id, active_jobs, llm))
     background_process.start()
 
     active_jobs.append({
-        'filename': filename,
+        'filename': file.filename,
         'user_id': user_id,
         'status': 'Running',
     })
@@ -76,16 +85,23 @@ def revise_prompt():
     revision = revise_prompt.run(prompt, llama_model)
     return jsonify({'status': 'success', 'message': 'Prompt revised.', 'revision': revision})
 
-@app.route('/download/<string:filename>/<int:revision_id>')
+@app.route('/download/<string:filename>/<int:revision_id>', methods=['GET'])
 def download_revision(filename, revision_id):
-    temp_file = download_revision_file(filename, revision_id, current_user.id)
-    return send_file(temp_file, as_attachment=True, filename=f"{filename}-revision-{revision_id}.txt")
+    temp_file = download_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
+    
+    # Split the filename and extension
+    root, extension = secure_filename(filename).rsplit('.', 1)
+
+    # Create the new filename with revision_id
+    new_filename = f"{root}_revision_{revision_id}.{extension}"
+
+    return send_file(temp_file, as_attachment=True, download_name=new_filename)
 
 # Delete a specific revision of the given file
-@app.route('/delete/<string:filename>/<int:revision_id>')
+@app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])
 def delete_revision(filename, revision_id):
-    result = delete_revision_file(filename, revision_id, current_user.id)
-    return jsonify(result)
+    result = delete_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
+    return redirect(url_for('index'))
 
 # Handle model loading errors in download routes using try-except blocks
 @app.errorhandler(FileNotFoundError)

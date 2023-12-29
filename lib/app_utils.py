@@ -113,11 +113,11 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_background_job(revisions_db, filename, user_id, active_jobs, llm):
+def process_background_job(revisions_db, upload_folder, filename, user_id, active_jobs, llm):
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
         generate_code_revision(revisions_db, filename, user_id, llm)
-        cleanup_uploaded_file(filename)
+        cleanup_uploaded_file(upload_folder + filename)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
         handle_job_error(active_jobs, filename, user_id, str(e))
@@ -137,15 +137,19 @@ def connect_db(revisions_db):
 def get_all_revisions(user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT id, revision FROM revisions WHERE user_id=?", (str(user_id)))
+    c.execute("SELECT id, revision, file_name FROM revisions WHERE user_id=?", (str(user_id)))
     revisions = c.fetchall()
     conn.close()
     return revisions
 
 
 # Helper function to download a specific revision
-def download_revision_file(filename, revision_id, user_id):
-    conn = connect_db()
+def download_revision_file(revisions_db, filename, revision_id, user_id):
+    print(revisions_db)
+    print(filename)
+    print(revision_id)
+    print(user_id)
+    conn = connect_db(revisions_db)
     c = conn.cursor()
     c.execute("SELECT revision FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
     revision = c.fetchone()[0]
@@ -160,8 +164,8 @@ def download_revision_file(filename, revision_id, user_id):
     return temp_file
 
 # Helper function to delete a specific revision
-def delete_revision_file(filename, revision_id, user_id):
-    conn = connect_db()
+def delete_revision_file(revisions_db, filename, revision_id, user_id):
+    conn = connect_db(revisions_db)
     c = conn.cursor()
     c.execute("DELETE FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
     conn.commit()

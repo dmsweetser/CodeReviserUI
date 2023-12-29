@@ -25,20 +25,44 @@
     <div class="mt-4">
         <h3>Manage Revisions</h3>
         {% if revisions %}
-        <ul class="list-group">
+            {% set files = {} %}
             {% for revision in revisions %}
-            <li class="list-group-item">
-                <p>Revision ID: {{ revision[0] }}</p>
-                <pre>{{ revision[1] }}</pre>
-                <a href="{{ url_for('download_revision', filename=revision.file_name, revision_id=revision[0]) }}"
-                    class="btn btn-info btn-sm ms-2">Download</a>
-                <a href="{{ url_for('delete_revision', filename=revision.file_name, revision_id=revision[0]) }}"
-                    class="btn btn-danger btn-sm ms-2">Delete</a>
-            </li>
+                {% set file_name = revision[2] %}
+                {% set _ = files.update({file_name: files.get(file_name, []) + [revision]}) %}
             {% endfor %}
-        </ul>
+    
+            {% for file_name, file_revisions in files.items() %}
+                <div class="accordion" id="{{ 'accordion_' ~ file_name }}">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="{{ 'heading_' ~ file_name }}">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="{{ '#collapse_' ~ file_name }}" aria-expanded="true"
+                                aria-controls="{{ 'collapse_' ~ file_name }}">
+                                {{ file_name }}
+                            </button>
+                        </h2>
+                        <div id="{{ 'collapse_' ~ file_name }}" class="accordion-collapse collapse show"
+                            aria-labelledby="{{ 'heading_' ~ file_name }}">
+                            <div class="accordion-body">
+                                <ul class="list-group">
+                                    {% for revision in file_revisions|sort(attribute='0', reverse=true) %}
+                                        <li class="list-group-item">
+                                            <p>Revision {{ revision[0] }}</p>
+                                            <textarea rows="5" class="form-control mt-2 mb-2" readonly>{{ revision[1] }}</textarea>
+                                            <a href="{{ url_for('download_revision', filename=file_name, revision_id=revision[0]) }}"
+                                                class="btn btn-info btn-sm ms-2">Download</a>
+                                            <a href="{{ url_for('delete_revision', filename=file_name, revision_id=revision[0]) }}"
+                                                class="btn btn-danger btn-sm ms-2">Delete</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         {% else %}
-        <p>No revisions found.</p>
+            <p>No revisions found.</p>
         {% endif %}
     </div>
 
