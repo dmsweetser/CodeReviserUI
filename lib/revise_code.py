@@ -17,9 +17,4 @@ def run(original_code, llama_model):
 
     revised_code = response['choices'][0]['message']['content']
 
-    pattern = re.compile(r'(\w+)(.*?)', re.DOTALL)
-    match = re.search(pattern, original_code)
-    if match:
-        revised_code = match.group(2)
-
     return revised_code

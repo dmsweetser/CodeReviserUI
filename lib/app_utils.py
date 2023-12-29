@@ -7,6 +7,7 @@ from flask import abort
 from llama_cpp import Llama
 from multiprocessing import Process
 from lib import revise_prompt, compare_texts, revise_code, build_readme
+from globals import active_jobs
 
 def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)
@@ -70,12 +71,11 @@ def update_job_status(active_jobs, filename, user_id, status):
         if job['filename'] == filename and job['user_id'] == user_id:
             job['status'] = status
 
-def generate_code_revision(revisions_db, upload_folder, filename, user_id, llm):
+def generate_code_revision(revisions_db, filename, user_id, llm):
     """Revise the given file using the LLM model and save it in the SQLite database."""
-    file_path = os.path.join(upload_folder, filename)
     
     try:
-        with open(file_path, 'r') as file:
+        with open(filename, 'r') as file:
             code = file.read()
 
         # Check if a revision already exists for the file
@@ -91,7 +91,7 @@ def generate_code_revision(revisions_db, upload_folder, filename, user_id, llm):
         save_revision(revisions_db, filename, user_id, revision)  # Save the revised code in SQLite database
 
     except FileNotFoundError:
-        handle_job_error(active_jobs, filename, user_id, f"File not found: {file_path}")
+        handle_job_error(active_jobs, filename, user_id, f"File not found: {filename}")
     except Exception as e:
         handle_job_error(active_jobs, filename, user_id, str(e))
 
@@ -113,17 +113,17 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_background_job(revisions_db, upload_folder, filename, user_id, active_jobs, llm):
+def process_background_job(revisions_db, filename, user_id, active_jobs, llm):
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
-        generate_code_revision(revisions_db, upload_folder, filename, user_id, llm)
-        cleanup_uploaded_file(upload_folder, filename)
+        generate_code_revision(revisions_db, filename, user_id, llm)
+        cleanup_uploaded_file(filename)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
         handle_job_error(active_jobs, filename, user_id, str(e))
 
-def cleanup_uploaded_file(upload_folder, filename):
-    os.remove(os.path.join(upload_folder, filename))
+def cleanup_uploaded_file(filename):
+    os.remove(filename)
 
 def handle_job_error(active_jobs, filename, user_id, error_message):
     print(f"Error processing job: {error_message}")

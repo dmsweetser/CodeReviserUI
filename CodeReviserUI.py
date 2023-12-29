@@ -7,7 +7,7 @@ from flask_login import LoginManager, UserMixin, current_user
 from multiprocessing import Process
 from urllib.error import HTTPError
 from app_utils import init_db, load_model, update_job_status, process_background_job, connect_db, get_all_revisions, download_revision_file, delete_revision_file
-
+from globals import active_jobs
 
 app = Flask(__name__)
 
@@ -29,10 +29,6 @@ class User(UserMixin):
 current_user = User(1, "developer")
 
 init_db(app.config['REVISIONS_DB'])  # Pass the database path
-
-active_jobs = None
-if active_jobs is None:
-    active_jobs = []
 
 llm = None
 if llm is None:
@@ -59,7 +55,7 @@ def queue():
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], filename, user_id, active_jobs, llm))
+    background_process = Process(target=process_background_job, args=(app.config['REVISIONS_DB'], filename, user_id, active_jobs, llm))
     background_process.start()
 
     active_jobs.append({
