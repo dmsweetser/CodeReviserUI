@@ -20,8 +20,7 @@ def init_db(revisions_db):
     conn.close()
 
 
-def load_model(model_url, upload_folder, model_filename, max_context):
-    llm = None
+def load_model_if_not_exists(model_url, upload_folder, model_filename, max_context):
     if not os.path.isfile(upload_folder + model_filename):
         try:
             response = requests.get(model_url)
@@ -29,43 +28,35 @@ def load_model(model_url, upload_folder, model_filename, max_context):
         except Exception as e:
             print("Failed to download model:", str(e))
             return None
-    try:
 
-        # Define llama.cpp parameters
-        llama_params = {
-            "loader": "llama.cpp",
-            "cpu": False,
-            "threads": 0,
-            "threads_batch": 0,
-            "n_batch": 512,
-            "no_mmap": False,
-            "mlock": False,
-            "no_mul_mat_q": False,
-            "n_gpu_layers": 0,
-            "tensor_split": "",
-            "n_ctx": max_context,
-            "compress_pos_emb": 1,
-            "alpha_value": 1,
-            "rope_freq_base": 0,
-            "numa": False,
-            "model": model_filename,
-            "temperature": 1.0,
-            "top_p": 0.99,
-            "top_k": 85,
-            "repetition_penalty": 1.01,
-            "typical_p": 0.68,
-            "tfs": 0.68,
-            "max_tokens": max_context
-        }
+    # Define llama.cpp parameters
+    llama_params = {
+        "loader": "llama.cpp",
+        "cpu": False,
+        "threads": 0,
+        "threads_batch": 0,
+        "n_batch": 512,
+        "no_mmap": False,
+        "mlock": False,
+        "no_mul_mat_q": False,
+        "n_gpu_layers": 0,
+        "tensor_split": "",
+        "n_ctx": max_context,
+        "compress_pos_emb": 1,
+        "alpha_value": 1,
+        "rope_freq_base": 0,
+        "numa": False,
+        "model": model_filename,
+        "temperature": 1.0,
+        "top_p": 0.99,
+        "top_k": 85,
+        "repetition_penalty": 1.01,
+        "typical_p": 0.68,
+        "tfs": 0.68,
+        "max_tokens": max_context
+    }
 
-        llm = Llama(upload_folder + model_filename, **llama_params)
-
-    except FileNotFoundError:
-        print("Model file not found locally, downloading...")
-        return load_model(model_url, upload_folder, model_filename, max_context)
-
-    return llm
-
+    return Llama(upload_folder + model_filename, **llama_params)
 
 def update_job_status(active_jobs, filename, user_id, status):
     # Update the status of the job in the active jobs list
@@ -73,24 +64,21 @@ def update_job_status(active_jobs, filename, user_id, status):
         if job['filename'] == filename and job['user_id'] == user_id:
             job['status'] = status
 
-def generate_code_revision(revisions_db, filename, user_id, llm):
+def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     
     try:
-        with open(filename, 'r') as file:
-            code = file.read()
+        code = file_contents.decode('utf-8')
 
-        # Check if a revision already exists for the file
-        existing_revision = get_latest_revision(filename, user_id, revisions_db)
-
-        if existing_revision:
-            revision = revise_code.run(existing_revision, llm)
-        else:
-            # If no initial revision exists, save the current code as the initial revision
-            save_revision(revisions_db, filename, user_id, code)
-            revision = revise_code.run(code, llm)
-
-        save_revision(revisions_db, filename, user_id, revision)  # Save the revised code in SQLite database
+        for _ in range(rounds):
+            existing_revision = get_latest_revision(filename, user_id, revisions_db)
+            if existing_revision:
+                revision = revise_code.run(existing_revision, llm)
+            else:
+                save_revision(revisions_db, filename, user_id, code)
+                revision = revise_code.run(code, llm)
+            save_revision(revisions_db, filename, user_id, revision)
+            code = revision
 
     except FileNotFoundError:
         handle_job_error(active_jobs, filename, user_id, f"File not found: {filename}")
@@ -115,7 +103,7 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user):
+def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user, rounds):
     if not filename:
         abort(400, description="No filename provided")
 
@@ -131,7 +119,7 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, user_id, active_jobs, llm))
+    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds))
     background_process.start()
 
     active_jobs.append({
@@ -140,17 +128,18 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         'status': 'Running',
     })
 
-def process_background_job(revisions_db, upload_folder, filename, user_id, active_jobs, llm):
+def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds):
+    
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
-        generate_code_revision(revisions_db, filename, user_id, llm)
-        cleanup_uploaded_file(upload_folder + filename)
+        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
         handle_job_error(active_jobs, filename, user_id, str(e))
 
 def cleanup_uploaded_file(filename):
-    os.remove(filename)
+    abs_filepath = os.path.abspath(filename)
+    os.remove(abs_filepath)
 
 def handle_job_error(active_jobs, filename, user_id, error_message):
     print(f"Error processing job: {error_message}")

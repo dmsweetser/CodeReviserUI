@@ -14,6 +14,20 @@
                     <div class="col">
                         <input type="file" name="file" class="form-control" required>
                     </div>
+                    <div class="col">
+                        <!-- Configuration Section for Number of Rounds -->
+                        <div class="row">
+                            <div class="col-auto mt-2">
+                                <label for="rounds" class="form-label">over </label>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" name="rounds" class="form-control" value="1" min="1" required>
+                            </div>
+                            <div class="col-auto mt-2">
+                                <label for="rounds" class="form-label">rounds</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-auto">
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </div>
@@ -21,6 +35,7 @@
             </form>
         </div>
     </div>
+
     <div class="mt-4">
         <h3>Manage Revisions</h3>
         {% if revisions %}
@@ -54,17 +69,33 @@
                                     class="btn btn-danger btn-sm ms-2">Delete Revision</a>
                                 <a href="{{ url_for('edit_revision', filename=file_name, revision_id=revision[0]) }}"
                                     class="btn btn-warning btn-sm ms-2">Edit Contents</a>
-                                {% if loop.first %} {# Check if it's the first (latest) revision #}
-                                <a href="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}"
-                                    class="btn btn-success btn-sm ms-2">Continue Revising</a>
-                                {% endif %}
                                 {% if not loop.last %} {# Check if it's not the last revision #}
-                                <a href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
+                                <a target="_blank" href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
                                     class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
                                 {% endif %}
+                                {% if loop.first %} {# Check if it's the first (latest) revision #}
+                                <form method="get"
+                                    action="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}">
+                                    <div class="row mt-2 mb-2">
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-success btn-sm ms-2">Continue
+                                                Revising for</button>
+                                        </div>
+                                        <div class="col-1">
+                                            <input type="number" name="rounds" class="form-control" value="1" min="1"
+                                                required>
+                                        </div>
+                                        <div class="col-auto mt-2">
+                                            <label for="rounds" class="form-label">rounds</label>
+                                        </div>
+                                    </div>
+                                </form>
+                                {% endif %}
                             </li>
+
                             {% endfor %}
                         </ul>
+
                     </div>
                 </div>
             </div>

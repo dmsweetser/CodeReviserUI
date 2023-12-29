@@ -1,11 +1,8 @@
-{% extends "base.html" %}
-
 {% block title %}Compare Revisions - Code Reviser UI{% endblock %}
 
 {% block content %}
-<div class="container mt-4 w-100 h-100">
+<div class="container w-100 h-100">
     <h2>Compare Revisions</h2>
-    <p>Comparison Result:</p>
     <pre>{{ comparison_result|safe }}</pre>
 </div>
 {% endblock %}

@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from app_utils import init_db, load_model, update_job_status, process_background_job, connect_db
+from app_utils import init_db, load_model_if_not_exists, update_job_status, process_background_job, connect_db
 from app_utils import get_all_revisions, download_revision_file, delete_revision_file, process_file_and_background_job
 from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
 
@@ -36,10 +36,6 @@ current_user = User(1, "developer")
 
 init_db(app.config['REVISIONS_DB'])  # Pass the database path
 
-llm = None
-if llm is None:
-    llm = load_model(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
-
 @app.route('/')
 def index():
     all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
@@ -48,10 +44,12 @@ def index():
 
 @app.route('/queue', methods=['POST'])
 def queue():
+    rounds = int(request.form.get('rounds', 1))
     file = request.files['file']
     filename = file.filename
     file_contents = file.getvalue()
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user)
+    print(file_contents)
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds)
     return redirect(url_for('index'))
 
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
@@ -82,8 +80,9 @@ def download_revision(filename, revision_id):
 
 @app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['GET'])
 def revise_from_revision(filename, revision_id):
+    rounds = int(request.form.get('rounds', 1))
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user)
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds)
     return redirect(url_for('index'))
 
 @app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])
@@ -99,6 +98,9 @@ def handle_model_not_found(e):
 def handle_http_errors(e):
     abort(500, description="Failed to download model.")
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    llm = load_model_if_not_exists(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    if llm is None:
+        print("Error: Model couldn't be loaded.")
+    else:
+        app.run(debug=True)
