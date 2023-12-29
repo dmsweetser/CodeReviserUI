@@ -43,17 +43,35 @@
         <ul class="list-group">
             {% for revision in revisions %}
             <li class="list-group-item">
-                <p>Revision ID: {{ revision.id }}</p>
-                <pre>{{ revision.revision }}</pre>
-                <a href="{{ url_for('download_revision', filename=revision.file_name, revision_id=revision.id) }}"
+                <p>Revision ID: {{ revision[0] }}</p>
+                <pre>{{ revision[1] }}</pre>
+                <a href="{{ url_for('download_revision', filename=revision.file_name, revision_id=revision[0]) }}"
                     class="btn btn-info btn-sm ms-2">Download</a>
-                <a href="{{ url_for('delete_revision', filename=revision.file_name, revision_id=revision.id) }}"
+                <a href="{{ url_for('delete_revision', filename=revision.file_name, revision_id=revision[0]) }}"
                     class="btn btn-danger btn-sm ms-2">Delete</a>
             </li>
             {% endfor %}
         </ul>
         {% else %}
         <p>No revisions found.</p>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        <h3>Active Jobs</h3>
+        {% if active_jobs %}
+        <ul class="list-group">
+            {% for job in active_jobs %}
+            <li class="list-group-item">
+                <p>Filename: {{ job.filename }}</p>
+                <p>User ID: {{ job.user_id }}</p>
+                <p>Status: {{ job.status }}</p>
+                <!-- You can add more information as needed -->
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No active jobs.</p>
         {% endif %}
     </div>
 
