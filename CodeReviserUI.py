@@ -67,7 +67,7 @@ def edit_revision(filename, revision_id):
 @app.route('/compare-revisions/<string:filename>/<int:revision_id1>/<int:revision_id2>', methods=['GET'])
 def compare_revisions(filename, revision_id1, revision_id2):
     try:
-        comparison_result = compare_two_revisions(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id1, revision_id2, current_user.id)
+        comparison_result = compare_two_revisions(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id1, revision_id2, current_user.id, 5)
         return render_template('compare_revisions.html', filename=filename, revision_id1=revision_id1, revision_id2=revision_id2, comparison_result=comparison_result)
     except Exception as e:
         print(f"Error comparing revisions: {str(e)}")

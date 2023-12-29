@@ -58,7 +58,7 @@
                                 <a href="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}"
                                     class="btn btn-success btn-sm ms-2">Continue Revising</a>
                                 {% endif %}
-                                {% if not loop.first %} {# Check if it's not the first revision #}
+                                {% if not loop.last %} {# Check if it's not the last revision #}
                                 <a href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
                                     class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
                                 {% endif %}
@@ -94,4 +94,23 @@
     </div>
 
 </div>
+
+<script>
+    // Function to check if any element has focus
+    function isAnyElementFocused() {
+        const focusedElement = document.activeElement;
+        return focusedElement && focusedElement !== document.body;
+    }
+
+    // Function to reload the page after a specified time interval
+    function reloadPage() {
+        if (!isAnyElementFocused()) {
+            location.reload();
+        }
+    }
+
+    // Set up the auto-refresh with a 10-second interval
+    setInterval(reloadPage, 10000);
+</script>
+
 {% endblock %}

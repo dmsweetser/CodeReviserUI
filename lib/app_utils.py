@@ -6,7 +6,9 @@ import uuid
 from flask import abort
 from llama_cpp import Llama
 from multiprocessing import Process
-from lib import compare_texts, revise_code, build_readme
+import difflib
+
+from lib import revise_code, build_readme
 from globals import active_jobs
 
 def init_db(revisions_db):
@@ -223,13 +225,12 @@ def get_revision_content_bytes(revisions_db, filename, revision_id, user_id):
     conn.close()
     return revision_content[0].encode() if revision_content else None
 
-def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, user_id):
+def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, user_id, context):
     """Compare two revisions using the compare_texts.run function."""
     content1 = get_revision_content(revisions_db, filename, revision_id1, user_id)
     content2 = get_revision_content(revisions_db, filename, revision_id2, user_id)
+    
+    differ = difflib.HtmlDiff()
+    comparison_result = differ.make_file(content2.splitlines(), content1.splitlines(), context=context)
 
-    if content1 is not None and content2 is not None:
-        comparison_result = compare_texts.run(content1, content2, context=5, ignore_whitespace=True)
-        return comparison_result
-    else:
-        return None
+    return comparison_result
