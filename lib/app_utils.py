@@ -6,6 +6,7 @@ import uuid
 from flask import abort
 from multiprocessing import Process
 import difflib
+from llama_cpp import Llama
 
 from lib import revise_code, build_readme
 from globals import active_jobs
@@ -63,7 +64,7 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user, rounds, prompt):
+def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, current_user, rounds, prompt, model_url, model_filename, max_context):
     if not filename:
         abort(400, description="No filename provided")
 
@@ -79,7 +80,7 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds, prompt))
+    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, rounds, prompt, model_url, model_filename, max_context))
     background_process.start()
 
     active_jobs.append({
@@ -88,10 +89,59 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         'status': 'Running',
     })
 
-def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds, prompt):
+def load_model(model_url, upload_folder, model_filename, max_context):
+
+    model_path = upload_folder + model_filename
+
+    if not os.path.isfile(model_path):
+        try:
+            response = requests.get(model_url)
+            with open(model_path, 'wb') as model_file:
+                model_file.write(response.content)
+        except Exception as e:
+            print("Failed to download or save the model:", str(e))
+            return None
+
+    # Define llama.cpp parameters
+    llama_params = {
+        "loader": "llama.cpp",
+        "cpu": False,
+        "threads": 0,
+        "threads_batch": 0,
+        "n_batch": 512,
+        "no_mmap": False,
+        "mlock": False,
+        "no_mul_mat_q": False,
+        "n_gpu_layers": 0,
+        "tensor_split": "",
+        "n_ctx": max_context,
+        "compress_pos_emb": 1,
+        "alpha_value": 1,
+        "rope_freq_base": 0,
+        "numa": False,
+        "model": model_filename,
+        "temperature": 1.0,
+        "top_p": 0.99,
+        "top_k": 85,
+        "repetition_penalty": 1.01,
+        "typical_p": 0.68,
+        "tfs": 0.68,
+        "max_tokens": max_context
+    }
+
+    try:
+        return Llama(model_path, **llama_params)
+    except Exception as e:
+        print("Failed to create Llama object:", str(e))
+        return None
+
+def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, rounds, prompt, model_url, model_filename, max_context):
     
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
+
+        llm = load_model(model_url, upload_folder, model_filename, max_context)        
+
         generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
