@@ -60,6 +60,7 @@ def queue():
         file_contents = request.form.get('fileContents', '').encode('utf-8')
 
     print(file_contents)
+    llm = load_model_if_not_exists(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds, prompt)
     return redirect(url_for('index'))
 
@@ -94,6 +95,7 @@ def revise_from_revision(filename, revision_id):
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
+    llm = load_model_if_not_exists(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds, prompt)
     return redirect(url_for('index'))
 
@@ -119,8 +121,8 @@ def load_model_if_not_exists(model_url, upload_folder, model_filename, max_conte
     model_path = upload_folder + model_filename
 
     # Check if Llama instance is already in the cache
-    if model_path in llama_cache:
-        return llama_cache[model_path]
+    if len(llama_cache) > 0:
+        return llama_cache[0]
 
     if not os.path.isfile(model_path):
         try:
@@ -161,7 +163,7 @@ def load_model_if_not_exists(model_url, upload_folder, model_filename, max_conte
     try:
         llama_instance = Llama(model_path, **llama_params)
         # Cache the Llama instance
-        llama_cache[model_path] = llama_instance
+        llama_cache[0] = llama_instance
         print("Llama Cache Length")
         print(len(llama_cache))
         return llama_instance
@@ -170,8 +172,4 @@ def load_model_if_not_exists(model_url, upload_folder, model_filename, max_conte
         return None
 
 if __name__ == '__main__':
-    llm = load_model_if_not_exists(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
-    if llm is None:
-        print("Error: Model couldn't be loaded.")
-    else:
-        app.run()
+    app.run()
