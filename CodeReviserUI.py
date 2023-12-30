@@ -3,13 +3,15 @@ import os
 import sqlite3
 import tempfile
 import uuid
+import requests
 from flask_login import LoginManager, UserMixin, current_user
 from multiprocessing import Process
 from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
+from llama_cpp import Llama
 
-from app_utils import init_db, load_model_if_not_exists, update_job_status, process_background_job, connect_db
+from app_utils import init_db, update_job_status, process_background_job, connect_db
 from app_utils import get_all_revisions, download_revision_file, delete_revision_file, process_file_and_background_job
 from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
 
@@ -45,11 +47,20 @@ def index():
 @app.route('/queue', methods=['POST'])
 def queue():
     rounds = int(request.form.get('rounds', 1))
-    file = request.files['file']
-    filename = file.filename
-    file_contents = file.getvalue()
+    prompt = request.form.get('prompt', '')
+
+    if 'file' in request.files:
+        # File Upload Scenario
+        file = request.files['file']
+        filename = secure_filename(file.filename)
+        file_contents = file.read()
+    else:
+        # Manual Input Scenario
+        filename = request.form.get('fileName', '')
+        file_contents = request.form.get('fileContents', '').encode('utf-8')
+
     print(file_contents)
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds)
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds, prompt)
     return redirect(url_for('index'))
 
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
@@ -81,8 +92,9 @@ def download_revision(filename, revision_id):
 @app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['GET'])
 def revise_from_revision(filename, revision_id):
     rounds = int(request.form.get('rounds', 1))
+    prompt = request.form.get('prompt', '')
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds)
+    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, llm, current_user, rounds, prompt)
     return redirect(url_for('index'))
 
 @app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])
@@ -98,9 +110,68 @@ def handle_model_not_found(e):
 def handle_http_errors(e):
     abort(500, description="Failed to download model.")
 
+# Global cache to store Llama instances
+llama_cache = {}
+
+def load_model_if_not_exists(model_url, upload_folder, model_filename, max_context):
+    global llama_cache
+
+    model_path = upload_folder + model_filename
+
+    # Check if Llama instance is already in the cache
+    if model_path in llama_cache:
+        return llama_cache[model_path]
+
+    if not os.path.isfile(model_path):
+        try:
+            response = requests.get(model_url)
+            with open(model_path, 'wb') as model_file:
+                model_file.write(response.content)
+        except Exception as e:
+            print("Failed to download or save the model:", str(e))
+            return None
+
+    # Define llama.cpp parameters
+    llama_params = {
+        "loader": "llama.cpp",
+        "cpu": False,
+        "threads": 0,
+        "threads_batch": 0,
+        "n_batch": 512,
+        "no_mmap": False,
+        "mlock": False,
+        "no_mul_mat_q": False,
+        "n_gpu_layers": 0,
+        "tensor_split": "",
+        "n_ctx": max_context,
+        "compress_pos_emb": 1,
+        "alpha_value": 1,
+        "rope_freq_base": 0,
+        "numa": False,
+        "model": model_filename,
+        "temperature": 1.0,
+        "top_p": 0.99,
+        "top_k": 85,
+        "repetition_penalty": 1.01,
+        "typical_p": 0.68,
+        "tfs": 0.68,
+        "max_tokens": max_context
+    }
+
+    try:
+        llama_instance = Llama(model_path, **llama_params)
+        # Cache the Llama instance
+        llama_cache[model_path] = llama_instance
+        print("Llama Cache Length")
+        print(len(llama_cache))
+        return llama_instance
+    except Exception as e:
+        print("Failed to create Llama object:", str(e))
+        return None
+
 if __name__ == '__main__':
     llm = load_model_if_not_exists(app.config['MODEL_URL'], app.config['UPLOAD_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     if llm is None:
         print("Error: Model couldn't be loaded.")
     else:
-        app.run(debug=True)
+        app.run()

@@ -4,7 +4,6 @@ import requests
 import tempfile
 import uuid
 from flask import abort
-from llama_cpp import Llama
 from multiprocessing import Process
 import difflib
 
@@ -19,52 +18,13 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
 
-
-def load_model_if_not_exists(model_url, upload_folder, model_filename, max_context):
-    if not os.path.isfile(upload_folder + model_filename):
-        try:
-            response = requests.get(model_url)
-            open(upload_folder + model_filename, 'wb').write(response.content)
-        except Exception as e:
-            print("Failed to download model:", str(e))
-            return None
-
-    # Define llama.cpp parameters
-    llama_params = {
-        "loader": "llama.cpp",
-        "cpu": False,
-        "threads": 0,
-        "threads_batch": 0,
-        "n_batch": 512,
-        "no_mmap": False,
-        "mlock": False,
-        "no_mul_mat_q": False,
-        "n_gpu_layers": 0,
-        "tensor_split": "",
-        "n_ctx": max_context,
-        "compress_pos_emb": 1,
-        "alpha_value": 1,
-        "rope_freq_base": 0,
-        "numa": False,
-        "model": model_filename,
-        "temperature": 1.0,
-        "top_p": 0.99,
-        "top_k": 85,
-        "repetition_penalty": 1.01,
-        "typical_p": 0.68,
-        "tfs": 0.68,
-        "max_tokens": max_context
-    }
-
-    return Llama(upload_folder + model_filename, **llama_params)
-
 def update_job_status(active_jobs, filename, user_id, status):
     # Update the status of the job in the active jobs list
     for job in active_jobs:
         if job['filename'] == filename and job['user_id'] == user_id:
             job['status'] = status
 
-def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds):
+def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     
     try:
@@ -73,10 +33,10 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
         for _ in range(rounds):
             existing_revision = get_latest_revision(filename, user_id, revisions_db)
             if existing_revision:
-                revision = revise_code.run(existing_revision, llm)
+                revision = revise_code.run(existing_revision, llm, prompt)
             else:
                 save_revision(revisions_db, filename, user_id, code)
-                revision = revise_code.run(code, llm)
+                revision = revise_code.run(code, llm, prompt)
             save_revision(revisions_db, filename, user_id, revision)
             code = revision
 
@@ -103,7 +63,7 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user, rounds):
+def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, llm, current_user, rounds, prompt):
     if not filename:
         abort(400, description="No filename provided")
 
@@ -119,7 +79,7 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds))
+    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds, prompt))
     background_process.start()
 
     active_jobs.append({
@@ -128,11 +88,11 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         'status': 'Running',
     })
 
-def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds):
+def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, llm, rounds, prompt):
     
     try:
         update_job_status(active_jobs, filename, user_id, 'Processing...')
-        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds)
+        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
         handle_job_error(active_jobs, filename, user_id, str(e))

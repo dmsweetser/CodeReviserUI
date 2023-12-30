@@ -6,122 +6,218 @@
 <div class="container mt-4">
     <h2>Dashboard</h2>
 
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <h3>Start a Revision</h3>
-            <form method="post" action="{{ url_for('queue') }}" enctype="multipart/form-data">
-                <div class="row mb-3">
-                    <div class="col">
-                        <input type="file" name="file" class="form-control" required>
-                    </div>
-                    <div class="col">
-                        <!-- Configuration Section for Number of Rounds -->
+    <!-- Start a Revision Accordion -->
+    <div class="accordion" id="startRevisionAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="startRevisionHeader">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#startRevisionCollapse" aria-expanded="true" aria-controls="startRevisionCollapse">
+                    Start a Revision
+                </button>
+            </h2>
+            <div id="startRevisionCollapse" class="accordion-collapse collapse show"
+                aria-labelledby="startRevisionHeader">
+                <div class="accordion-body">
+
+                    <div class="container mt-4">
                         <div class="row">
-                            <div class="col-auto mt-2">
-                                <label for="rounds" class="form-label">over </label>
-                            </div>
-                            <div class="col-4">
-                                <input type="number" name="rounds" class="form-control" value="1" min="1" required>
-                            </div>
-                            <div class="col-auto mt-2">
-                                <label for="rounds" class="form-label">rounds</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+                            <div class="col-md-6">
+                                <h3>Start a Revision</h3>
+                                <form method="post" action="{{ url_for('queue') }}" enctype="multipart/form-data">
 
-    <div class="mt-4">
-        <h3>Manage Revisions</h3>
-        {% if revisions %}
-        {% set files = {} %}
-        {% for revision in revisions %}
-        {% set file_name = revision[2] %}
-        {% set _ = files.update({file_name: files.get(file_name, []) + [revision]}) %}
-        {% endfor %}
-
-        {% for file_name, file_revisions in files.items() %}
-        <div class="accordion" id="{{ 'accordion_' ~ file_name }}">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="{{ 'heading_' ~ file_name }}">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                        data-bs-target="{{ '#collapse_' ~ file_name }}" aria-expanded="true"
-                        aria-controls="{{ 'collapse_' ~ file_name }}">
-                        {{ file_name }}
-                    </button>
-                </h2>
-                <div id="{{ 'collapse_' ~ file_name }}" class="accordion-collapse collapse show"
-                    aria-labelledby="{{ 'heading_' ~ file_name }}">
-                    <div class="accordion-body">
-                        <ul class="list-group">
-                            {% for revision in file_revisions|sort(attribute='0', reverse=true) %}
-                            <li class="list-group-item">
-                                <p>Revision {{ revision[0] }}</p>
-                                <textarea rows="5" class="form-control mt-2 mb-2" readonly>{{ revision[1] }}</textarea>
-                                <a href="{{ url_for('download_revision', filename=file_name, revision_id=revision[0]) }}"
-                                    class="btn btn-info btn-sm ms-2">Download Revision</a>
-                                <a href="{{ url_for('delete_revision', filename=file_name, revision_id=revision[0]) }}"
-                                    class="btn btn-danger btn-sm ms-2">Delete Revision</a>
-                                <a href="{{ url_for('edit_revision', filename=file_name, revision_id=revision[0]) }}"
-                                    class="btn btn-warning btn-sm ms-2">Edit Contents</a>
-                                {% if not loop.last %} {# Check if it's not the last revision #}
-                                <a target="_blank" href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
-                                    class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
-                                {% endif %}
-                                {% if loop.first %} {# Check if it's the first (latest) revision #}
-                                <form method="get"
-                                    action="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}">
-                                    <div class="row mt-2 mb-2">
-                                        <div class="col-auto">
-                                            <button type="submit" class="btn btn-success btn-sm ms-2">Continue
-                                                Revising for</button>
+                                    <!-- File Upload Section -->
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label for="file" class="form-label">Upload File:</label>
+                                            <input type="file" name="file" class="form-control">
                                         </div>
-                                        <div class="col-1">
+                                    </div>
+
+                                    <!-- OR -->
+
+                                    <!-- Manual Input Section -->
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label for="manualInput" class="form-label">OR Manual Input:</label>
+                                            <!-- File Name -->
+                                            <div class="mb-3">
+                                                <label for="fileName" class="form-label">File Name:</label>
+                                                <input type="text" name="fileName" class="form-control">
+                                            </div>
+                                            <!-- File Contents -->
+                                            <div class="mb-3">
+                                                <label for="fileContents" class="form-label">File Contents:</label>
+                                                <textarea name="fileContents" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Configuration Section for Number of Rounds -->
+                                    <div class="row mb-3">
+                                        <div class="col-auto">
+                                            <label for="rounds" class="form-label">Number of Revision Rounds?</label>
+                                        </div>
+                                        <div class="col-2">
                                             <input type="number" name="rounds" class="form-control" value="1" min="1"
                                                 required>
                                         </div>
-                                        <div class="col-auto mt-2">
-                                            <label for="rounds" class="form-label">rounds</label>
+                                    </div>
+
+                                    <!-- New Input Field for Prompt -->
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label for="prompt" class="form-label">Optional Prompt: </label>
+                                            <textarea name="prompt" class="form-control" rows="3"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-primary">Upload</button>
                                         </div>
                                     </div>
                                 </form>
-                                {% endif %}
-                            </li>
-
-                            {% endfor %}
-                        </ul>
-
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <p>No revisions found.</p>
-        {% endif %}
     </div>
 
-    <div class="mt-4">
-        <h3>Active Jobs</h3>
-        {% if active_jobs %}
-        <ul class="list-group">
-            {% for job in active_jobs %}
-            <li class="list-group-item">
-                <p>Filename: {{ job.filename }}</p>
-                <p>User ID: {{ job.user_id }}</p>
-                <p>Status: {{ job.status }}</p>
-                <!-- You can add more information as needed -->
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No active jobs.</p>
-        {% endif %}
+    <!-- Manage Revisions Accordion -->
+    <div class="accordion mt-4" id="manageRevisionsAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="manageRevisionsHeader">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#manageRevisionsCollapse" aria-expanded="true"
+                    aria-controls="manageRevisionsCollapse">
+                    Manage Revisions
+                </button>
+            </h2>
+            <div id="manageRevisionsCollapse" class="accordion-collapse collapse show"
+                aria-labelledby="manageRevisionsHeader">
+                <div class="accordion-body">
+                    <div class="mt-4">
+                        <h3>Manage Revisions</h3>
+                        {% if revisions %}
+                        {% set files = {} %}
+                        {% for revision in revisions %}
+                        {% set file_name = revision[2] %}
+                        {% set _ = files.update({file_name: files.get(file_name, []) + [revision]}) %}
+                        {% endfor %}
+
+                        {% for file_name, file_revisions in files.items() %}
+                        <div class="accordion" id="{{ 'accordion_' ~ file_name }}">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="{{ 'heading_' ~ file_name }}">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="{{ '#collapse_' ~ file_name }}" aria-expanded="true"
+                                        aria-controls="{{ 'collapse_' ~ file_name }}">
+                                        {{ file_name }}
+                                    </button>
+                                </h2>
+                                <div id="{{ 'collapse_' ~ file_name }}" class="accordion-collapse collapse show"
+                                    aria-labelledby="{{ 'heading_' ~ file_name }}">
+                                    <div class="accordion-body">
+                                        <ul class="list-group">
+                                            {% for revision in file_revisions|sort(attribute='0', reverse=true) %}
+                                            <li class="list-group-item">
+                                                <p>Revision {{ revision[0] }}</p>
+                                                <textarea rows="5" class="form-control mt-2 mb-2"
+                                                    readonly>{{ revision[1] }}</textarea>
+                                                <a href="{{ url_for('download_revision', filename=file_name, revision_id=revision[0]) }}"
+                                                    class="btn btn-info btn-sm ms-2">Download Revision</a>
+                                                <a href="{{ url_for('delete_revision', filename=file_name, revision_id=revision[0]) }}"
+                                                    class="btn btn-danger btn-sm ms-2">Delete Revision</a>
+                                                <a href="{{ url_for('edit_revision', filename=file_name, revision_id=revision[0]) }}"
+                                                    class="btn btn-warning btn-sm ms-2">Edit Contents</a>
+                                                {% if not loop.last %} {# Check if it's not the last revision #}
+                                                <a target="_blank"
+                                                    href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
+                                                    class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
+                                                {% endif %}
+                                                {% if loop.first %} {# Check if it's the first (latest) revision #}
+                                                <form method="get"
+                                                    action="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}">
+                                                    <div class="row mt-2 mb-2">
+                                                        <div class="col-auto">
+                                                            <button type="submit"
+                                                                class="btn btn-success btn-sm ms-2">Continue
+                                                                Revising for</button>
+                                                        </div>
+                                                        <div class="col-1">
+                                                            <input type="number" name="rounds" class="form-control"
+                                                                value="1" min="1" required>
+                                                        </div>
+                                                        <div class="col-auto mt-2">
+                                                            <label for="rounds" class="form-label">rounds</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col">
+                                                        <!-- New Input Field for Prompt -->
+                                                        <div class="row">
+                                                            <div class="col-auto mt-2">
+                                                                <label for="prompt" class="form-label">Optional Prompt: </label>
+                                                            </div>
+                                                            <div class="col">
+                                                                <input type="text" name="prompt" class="form-control"
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                                {% endif %}
+                                            </li>
+
+                                            {% endfor %}
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p>No revisions found.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Jobs Accordion -->
+    <div class="accordion mt-4" id="activeJobsAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="activeJobsHeader">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#activeJobsCollapse" aria-expanded="true" aria-controls="activeJobsCollapse">
+                    Active Jobs
+                </button>
+            </h2>
+            <div id="activeJobsCollapse" class="accordion-collapse collapse show" aria-labelledby="activeJobsHeader">
+                <div class="accordion-body">
+                    <div class="mt-4">
+                        <h3>Active Jobs</h3>
+                        {% if active_jobs %}
+                        <ul class="list-group">
+                            {% for job in active_jobs %}
+                            <li class="list-group-item">
+                                <p>Filename: {{ job.filename }}</p>
+                                <p>User ID: {{ job.user_id }}</p>
+                                <p>Status: {{ job.status }}</p>
+                                <!-- You can add more information as needed -->
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p>No active jobs.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
