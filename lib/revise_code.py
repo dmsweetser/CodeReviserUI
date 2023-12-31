@@ -13,14 +13,14 @@ def extract_code_from_markdown(markdown):
     if code_blocks:
         return code_blocks[0].strip()  # Trimming whitespace
     else:
-        return None  # Return None if no code block is found
+        return markdown  # Return the original if no code block is found
 
 def run(original_code, llama_model, prompt):
 
     if prompt == "":
         prompt = "Revise and enhance the provided code by addressing issues, optimizing, and expanding features; implement pseudocode, comments, and placeholders; suggest additional features or improvements in comments or pseudocode for iterative development in subsequent rounds. If you implement something that was suggested in a placeholder, or if you see that the code already implements it, YOU MUST remove the placeholder. Include a properly-commented summary of the overall intent of the code that mentions every intended feature. Use the same programming language as the provided code. Include at least five TODO items for potential new features in the places in the code where they should be implemented."
 
-    messages = [{"role": "system", "content": prompt + ". You MUST provide the revised code in markdown. Here is the provided code: ```" + original_code + "```"}]
+    messages = [{"role": "system", "content": prompt + " Here is the provided code: ```" + original_code + "```"}]
     
     response = llama_model.create_chat_completion(messages=messages)
 

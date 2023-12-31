@@ -15,7 +15,7 @@
                     Start a Revision
                 </button>
             </h2>
-            <div id="startRevisionCollapse" class="accordion-collapse collapse show"
+            <div id="startRevisionCollapse" class="accordion-collapse collapse"
                 aria-labelledby="startRevisionHeader">
                 <div class="accordion-body">
 
@@ -117,7 +117,7 @@
                                         {{ file_name }}
                                     </button>
                                 </h2>
-                                <div id="{{ 'collapse_' ~ file_name }}" class="accordion-collapse collapse show"
+                                <div id="{{ 'collapse_' ~ file_name }}" class="accordion-collapse collapse"
                                     aria-labelledby="{{ 'heading_' ~ file_name }}">
                                     <div class="accordion-body">
                                         <ul class="list-group">
@@ -161,8 +161,7 @@
                                                                 <label for="prompt" class="form-label">Optional Prompt Override: </label>
                                                             </div>
                                                             <div class="col">
-                                                                <input type="text" name="prompt" class="form-control"
-                                                                    required>
+                                                                <input type="text" name="prompt" class="form-control">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -196,7 +195,7 @@
                     Active Jobs
                 </button>
             </h2>
-            <div id="activeJobsCollapse" class="accordion-collapse collapse show" aria-labelledby="activeJobsHeader">
+            <div id="activeJobsCollapse" class="accordion-collapse collapse" aria-labelledby="activeJobsHeader">
                 <div class="accordion-body">
                     <div class="mt-4">
                         <h3>Active Jobs</h3>
@@ -222,7 +221,8 @@
 
 </div>
 
-<script>
+<!-- Disabling auto-refresh for now - can be enabled as desired -->
+<!-- <script>
     // Function to check if any element has focus
     function isAnyElementFocused() {
         const focusedElement = document.activeElement;
@@ -238,6 +238,6 @@
 
     // Set up the auto-refresh with a 10-second interval
     setInterval(reloadPage, 10000);
-</script>
+</script> -->
 
 {% endblock %}

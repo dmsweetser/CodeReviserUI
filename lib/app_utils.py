@@ -42,8 +42,10 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
             code = revision
 
     except FileNotFoundError:
+        print(str(e))
         handle_job_error(active_jobs, filename, user_id, f"File not found: {filename}")
     except Exception as e:
+        print(str(e))
         handle_job_error(active_jobs, filename, user_id, str(e))
 
 # Helper function to get the latest revision for a given file and user
@@ -145,6 +147,7 @@ def process_background_job(revisions_db, upload_folder, filename, file_contents,
         generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
         update_job_status(active_jobs, filename, user_id, 'Completed')
     except Exception as e:
+        print(str(e))
         handle_job_error(active_jobs, filename, user_id, str(e))
 
 def cleanup_uploaded_file(filename):
