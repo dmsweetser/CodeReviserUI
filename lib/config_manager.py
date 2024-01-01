@@ -11,6 +11,11 @@ def load_config():
 
 def get_config(key, default=None):
     config = load_config()
+
+    if key not in config:
+        config[key] = default
+        update_config(key, default)
+
     return config.get(key, default)
 
 def update_config(key, value):

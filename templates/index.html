@@ -3,6 +3,7 @@
 {% block title %}Dashboard - Code Reviser UI{% endblock %}
 
 {% block content %}
+
 <div class="container mt-4">
     <h2>Dashboard</h2>
 
@@ -56,7 +57,7 @@
                                             <label for="rounds" class="form-label mt-2">Number of Revision
                                                 Rounds?</label>
                                         </div>
-                                        <div class="col-2">
+                                        <div class="col-4">
                                             <input type="number" name="rounds" class="form-control" value="1" min="1"
                                                 required>
                                         </div>
@@ -191,19 +192,20 @@
             <h2 class="accordion-header" id="batchedJobsHeader">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                     data-bs-target="#batchedJobsCollapse" aria-expanded="true" aria-controls="batchedJobsCollapse">
-                    <strong>Batched Jobs</strong>
+                    <strong>Batched Job History</strong>
                 </button>
             </h2>
             <div id="batchedJobsCollapse" class="accordion-collapse collapse" aria-labelledby="batchedJobsHeader">
                 <div class="accordion-body">
                     <div class="mt-4">
-                        {% if active_jobs %}
+                        {% if jobs %}
                         <ul class="list-group">
-                            {% for job in active_jobs %}
+                            {% for job in jobs %}
                             <li class="list-group-item">
                                 <p>Filename: {{ job.filename }}</p>
                                 <p>Status: {{ job.status }}</p>
                                 <p>Number of Rounds: {{ job.rounds }}</p>
+                                <p>Prompt Override: {{ job.prompt }}</p>
                             </li>
                             {% endfor %}
                         </ul>

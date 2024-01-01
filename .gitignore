@@ -2,6 +2,5 @@ venv/
 uploads/*
 !uploads/placeholder.txt
 revisions.db
-active_jobs.json
-config.json
+*.json
 lib/__pycache__

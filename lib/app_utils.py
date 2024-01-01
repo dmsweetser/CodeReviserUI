@@ -21,17 +21,21 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
 
-def load_active_jobs():
-    active_jobs = []
+def load_jobs():
+    jobs = []
 
     try:
-        with open("active_jobs.json", 'r') as json_file:
+        config = load_config()
+        job_file = get_config("job_file", "jobs.json")
+
+        with open(job_file, 'r') as json_file:
             for line in json_file:
                 request_data = json.loads(line)
-                active_jobs.append({
+                jobs.append({
                     'filename': request_data['filename'],
                     'status': request_data['status'],
-                    'rounds': request_data['rounds']
+                    'rounds': request_data['rounds'],
+                    'prompt': request_data['prompt']
                 })
     except FileNotFoundError:
         # Handle if the file is not found (initial case)
@@ -41,12 +45,15 @@ def load_active_jobs():
     status_order = {'NEW': 0, 'STARTED': 1, 'FINISHED': 2}
 
     # Sort the list of dictionaries based on the custom sorting order and 'rounds'
-    sorted_active_jobs = sorted(active_jobs, key=lambda x: (status_order[x['status']], x['rounds']))
+    sorted_jobs = sorted(jobs, key=lambda x: (status_order[x['status']], x['rounds']))
 
-    return sorted_active_jobs
+    return sorted_jobs
 
 def update_job_status(filename, user_id, status):
-    with open('active_jobs.json', 'r+') as json_file:
+    config = load_config()
+    job_file = get_config("job_file", "jobs.json")
+
+    with open(job_file, 'r+') as json_file:
         lines = json_file.readlines()
         json_file.seek(0)
         json_file.truncate()
@@ -101,7 +108,11 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.close()
 
 def start_batch_job(revisions_db, upload_folder, model_url, model_filename, max_context):
-    batch_process = Process(target=process_batch, args=('active_jobs.json', revisions_db, upload_folder, model_url, model_filename, max_context))
+
+    config = load_config()
+    job_file = get_config("job_file", "jobs.json")
+
+    batch_process = Process(target=process_batch, args=(job_file, revisions_db, upload_folder, model_url, model_filename, max_context))
     batch_process.start()
 
 def add_job(max_file_size, filename, file_contents, upload_folder, revisions_db, current_user, rounds, prompt):
@@ -120,7 +131,11 @@ def add_job(max_file_size, filename, file_contents, upload_folder, revisions_db,
         abort(500, description=str(e))
 
     user_id = current_user.id
-    save_request_to_json('active_jobs.json', filename, file_contents, user_id, rounds, prompt)
+
+    config = load_config()
+    job_file = get_config("job_file", "jobs.json")
+
+    save_request_to_json(job_file, filename, file_contents, user_id, rounds, prompt)
 
 def save_request_to_json(batch_requests_file, filename, file_contents, user_id, rounds, prompt):
 
@@ -310,4 +325,7 @@ def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, us
     differ = difflib.HtmlDiff()
     comparison_result = differ.make_file(content2.splitlines(), content1.splitlines(), context=context)
 
-    return comparison_result
+    # Wrap the diffed text in a <div> with inline styles
+    wrapped_comparison_result = f'<div style="overflow: auto; white-space: pre-wrap; max-width: 100%;">{comparison_result}</div>'
+
+    return wrapped_comparison_result

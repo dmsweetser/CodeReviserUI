@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from app_utils import init_db, update_job_status, connect_db, load_active_jobs
+from app_utils import init_db, update_job_status, connect_db, load_jobs
 from app_utils import get_all_revisions, download_revision_file, delete_revision_file, add_job, start_batch_job
 from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
 from config_manager import load_config, get_config, update_config
@@ -42,10 +42,10 @@ init_db(app.config['REVISIONS_DB'])  # Pass the database path
 
 @app.route('/')
 def index():
-    active_jobs = load_active_jobs()
+    jobs = load_jobs()
     all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
-    return render_template('index.html', active_jobs=active_jobs, revisions=all_revisions)
+    return render_template('index.html', jobs=jobs, revisions=all_revisions)
 
 @app.route('/queue', methods=['POST'])
 def queue():
