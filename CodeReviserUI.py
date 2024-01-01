@@ -10,23 +10,26 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from app_utils import init_db, update_job_status, connect_db
-from app_utils import get_all_revisions, download_revision_file, delete_revision_file, process_file_and_background_job
+from app_utils import init_db, update_job_status, connect_db, load_active_jobs
+from app_utils import get_all_revisions, download_revision_file, delete_revision_file, add_job, start_batch_job
 from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
-
-from globals import active_jobs
+from config_manager import load_config, get_config, update_config
 
 app = Flask(__name__)
 
-app.secret_key = 'your_secret_key'
-app.config['UPLOAD_FOLDER'] = 'uploads/'
-app.config['REVISIONS_DB'] = 'revisions.db'
-app.config['MODEL_URL'] = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_S.gguf"
-app.config['MODEL_FILENAME'] = "mistral-7b-instruct-v0.2.Q5_K_S.gguf"
-app.config['MAX_CONTEXT'] = 32768
-app.config['REVISIONS_PER_PAGE'] = 10
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['MAX_FILE_SIZE'] = 10 * 1024 * 1024
+# Load existing config or set defaults
+config = load_config()
+
+# Set defaults if not present in the config
+app.secret_key = get_config('secret_key', 'your_secret_key')
+app.config['UPLOAD_FOLDER'] = get_config('upload_folder', 'uploads/')
+app.config['REVISIONS_DB'] = get_config('revisions_db', 'revisions.db')
+app.config['MODEL_URL'] = get_config('model_url', "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_S.gguf")
+app.config['MODEL_FILENAME'] = get_config('model_filename', "mistral-7b-instruct-v0.2.Q5_K_S.gguf")
+app.config['MAX_CONTEXT'] = get_config('max_context', 32768)
+app.config['REVISIONS_PER_PAGE'] = get_config('revisions_per_page', 10)
+app.config['SESSION_TYPE'] = get_config('session_type', 'filesystem')
+app.config['MAX_FILE_SIZE'] = get_config('max_file_size', 10 * 1024 * 1024)
 
 class User(UserMixin):
     def __init__(self, id, username):
@@ -39,6 +42,7 @@ init_db(app.config['REVISIONS_DB'])  # Pass the database path
 
 @app.route('/')
 def index():
+    active_jobs = load_active_jobs()
     all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
     return render_template('index.html', active_jobs=active_jobs, revisions=all_revisions)
@@ -48,7 +52,7 @@ def queue():
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')
     print(prompt)
-    if 'file' in request.files:
+    if 'file' in request.files and request.files['file'].filename != '':
         # File Upload Scenario
         file = request.files['file']
         filename = secure_filename(file.filename)
@@ -58,8 +62,12 @@ def queue():
         filename = request.form.get('fileName', '')
         file_contents = request.form.get('fileContents', '').encode('utf-8')
 
-    print(file_contents)
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, current_user, rounds, prompt, app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    add_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
+    return redirect(url_for('index'))
+
+@app.route('/start-batch', methods=['GET'])
+def start_batch():
+    start_batch_job(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     return redirect(url_for('index'))
 
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
@@ -93,13 +101,22 @@ def revise_from_revision(filename, revision_id):
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-    process_file_and_background_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], active_jobs, current_user, rounds, prompt, app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    add_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
     return redirect(url_for('index'))
 
 @app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])
 def delete_revision(filename, revision_id):
     result = delete_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
     return redirect(url_for('index'))
+
+@app.route('/edit_config', methods=['GET', 'POST'])
+def edit_config():
+    if request.method == 'POST':
+        for key, value in request.form.items():
+            update_config(key, value)
+        return redirect(url_for('index'))
+    config = load_config()
+    return render_template('edit_config.html', config=config)
 
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):

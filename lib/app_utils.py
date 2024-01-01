@@ -7,9 +7,11 @@ from flask import abort
 from multiprocessing import Process
 import difflib
 from llama_cpp import Llama
+import json
+import base64
+from config_manager import load_config, get_config, update_config
 
 from lib import revise_code, build_readme
-from globals import active_jobs
 
 def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)
@@ -19,11 +21,43 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
 
-def update_job_status(active_jobs, filename, user_id, status):
-    # Update the status of the job in the active jobs list
-    for job in active_jobs:
-        if job['filename'] == filename and job['user_id'] == user_id:
-            job['status'] = status
+def load_active_jobs():
+    active_jobs = []
+
+    try:
+        with open("active_jobs.json", 'r') as json_file:
+            for line in json_file:
+                request_data = json.loads(line)
+                active_jobs.append({
+                    'filename': request_data['filename'],
+                    'status': request_data['status'],
+                    'rounds': request_data['rounds']
+                })
+    except FileNotFoundError:
+        # Handle if the file is not found (initial case)
+        pass
+
+    # Define a custom sorting order for statuses
+    status_order = {'NEW': 0, 'STARTED': 1, 'FINISHED': 2}
+
+    # Sort the list of dictionaries based on the custom sorting order and 'rounds'
+    sorted_active_jobs = sorted(active_jobs, key=lambda x: (status_order[x['status']], x['rounds']))
+
+    return sorted_active_jobs
+
+def update_job_status(filename, user_id, status):
+    with open('active_jobs.json', 'r+') as json_file:
+        lines = json_file.readlines()
+        json_file.seek(0)
+        json_file.truncate()
+
+        for line in lines:
+            request_data = json.loads(line)
+            if request_data['filename'] == filename and request_data['user_id'] == user_id:
+                request_data['status'] = status
+
+            json.dump(request_data, json_file)
+            json_file.write('\n')
 
 def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt):
     """Revise the given file using the LLM model and save it in the SQLite database."""
@@ -43,10 +77,10 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
 
     except FileNotFoundError:
         print(str(e))
-        handle_job_error(active_jobs, filename, user_id, f"File not found: {filename}")
+        update_job_status(filename, user_id, f"ERROR - File not found: {filename}")
     except Exception as e:
         print(str(e))
-        handle_job_error(active_jobs, filename, user_id, str(e))
+        update_job_status(filename, user_id, "ERROR - " + str(e))
 
 # Helper function to get the latest revision for a given file and user
 def get_latest_revision(filename, user_id, revisions_db):
@@ -66,7 +100,11 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def process_file_and_background_job(max_file_size, filename, file_contents, upload_folder, revisions_db, active_jobs, current_user, rounds, prompt, model_url, model_filename, max_context):
+def start_batch_job(revisions_db, upload_folder, model_url, model_filename, max_context):
+    batch_process = Process(target=process_batch, args=('active_jobs.json', revisions_db, upload_folder, model_url, model_filename, max_context))
+    batch_process.start()
+
+def add_job(max_file_size, filename, file_contents, upload_folder, revisions_db, current_user, rounds, prompt):
     if not filename:
         abort(400, description="No filename provided")
 
@@ -82,14 +120,66 @@ def process_file_and_background_job(max_file_size, filename, file_contents, uplo
         abort(500, description=str(e))
 
     user_id = current_user.id
-    background_process = Process(target=process_background_job, args=(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, rounds, prompt, model_url, model_filename, max_context))
-    background_process.start()
+    save_request_to_json('active_jobs.json', filename, file_contents, user_id, rounds, prompt)
 
-    active_jobs.append({
+def save_request_to_json(batch_requests_file, filename, file_contents, user_id, rounds, prompt):
+
+    encoded_contents = base64.b64encode(file_contents).decode('utf-8')
+
+    request_data = {
         'filename': filename,
+        'file_contents': encoded_contents,
         'user_id': user_id,
-        'status': 'Running',
-    })
+        'rounds': rounds,
+        'prompt': prompt,
+        'status': 'NEW'
+    }
+
+    with open(batch_requests_file, 'a') as json_file:
+        json.dump(request_data, json_file)
+        json_file.write('\n')
+
+def process_batch(batch_requests_file, revisions_db, upload_folder, model_url, model_filename, max_context):
+    processed_jobs = []
+
+    llm = load_model(model_url, upload_folder, model_filename, max_context)
+
+    with open(batch_requests_file, 'r') as json_file:
+        for line in json_file:
+            request_data = json.loads(line)
+            filename = request_data['filename']
+            file_contents = base64.b64decode(request_data['file_contents'])
+            user_id = request_data['user_id']
+            rounds = request_data['rounds']
+            prompt = request_data['prompt']
+            status = request_data['status']
+
+            if status == "FINISHED":
+                # Skip this iteration
+                continue
+
+            try:
+                update_job_status(filename, user_id, "STARTED")
+                generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
+                update_job_status(filename, user_id, "FINISHED")
+                processed_jobs.append(line)
+            except Exception as e:
+                print(str(e))
+                # Handle job error as needed
+
+    # Remove processed jobs from the file
+    with open(batch_requests_file, 'r+') as json_file:
+        lines = json_file.readlines()
+        json_file.seek(0)
+        json_file.truncate()
+
+        for line in lines:
+            if line not in processed_jobs:
+                json_file.write(line)
+
+def cleanup_uploaded_file(filename):
+    abs_filepath = os.path.abspath(filename)
+    os.remove(abs_filepath)
 
 def load_model(model_url, upload_folder, model_filename, max_context):
 
@@ -104,8 +194,11 @@ def load_model(model_url, upload_folder, model_filename, max_context):
             print("Failed to download or save the model:", str(e))
             return None
 
-    # Define llama.cpp parameters
-    llama_params = {
+    # Load configuration from config.json
+    config = load_config()
+
+    # Define default llama.cpp parameters
+    default_llama_params = {
         "loader": "llama.cpp",
         "cpu": False,
         "threads": 0,
@@ -131,32 +224,14 @@ def load_model(model_url, upload_folder, model_filename, max_context):
         "max_tokens": max_context
     }
 
+    # Update llama_params with values from config or use defaults
+    llama_params = {key: get_config(key, default_value) for key, default_value in default_llama_params.items()}
+
     try:
         return Llama(model_path, **llama_params)
     except Exception as e:
         print("Failed to create Llama object:", str(e))
         return None
-
-def process_background_job(revisions_db, upload_folder, filename, file_contents, user_id, active_jobs, rounds, prompt, model_url, model_filename, max_context):
-    
-    try:
-        update_job_status(active_jobs, filename, user_id, 'Processing...')
-
-        llm = load_model(model_url, upload_folder, model_filename, max_context)        
-
-        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
-        update_job_status(active_jobs, filename, user_id, 'Completed')
-    except Exception as e:
-        print(str(e))
-        handle_job_error(active_jobs, filename, user_id, str(e))
-
-def cleanup_uploaded_file(filename):
-    abs_filepath = os.path.abspath(filename)
-    os.remove(abs_filepath)
-
-def handle_job_error(active_jobs, filename, user_id, error_message):
-    print(f"Error processing job: {error_message}")
-    update_job_status(active_jobs, filename, user_id, f'Error: {error_message}')
 
 # Helper function to connect to the revisions database
 def connect_db(revisions_db):

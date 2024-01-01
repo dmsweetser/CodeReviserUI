@@ -12,17 +12,15 @@
             <h2 class="accordion-header" id="startRevisionHeader">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                     data-bs-target="#startRevisionCollapse" aria-expanded="true" aria-controls="startRevisionCollapse">
-                    Start a Revision
+                    <strong>Submit a Code Revision Job</strong>
                 </button>
             </h2>
-            <div id="startRevisionCollapse" class="accordion-collapse collapse"
-                aria-labelledby="startRevisionHeader">
+            <div id="startRevisionCollapse" class="accordion-collapse collapse" aria-labelledby="startRevisionHeader">
                 <div class="accordion-body">
 
                     <div class="container mt-4">
                         <div class="row">
                             <div class="col-md-6">
-                                <h3>Start a Revision</h3>
                                 <form method="post" action="{{ url_for('queue') }}" enctype="multipart/form-data">
 
                                     <!-- File Upload Section -->
@@ -36,7 +34,7 @@
                                     <!-- OR -->
 
                                     <!-- Manual Input Section -->
-                                    <div class="row mb-3">
+                                    <div class="row mb-2">
                                         <div class="col">
                                             <label for="manualInput" class="form-label">OR Manual Input:</label>
                                             <!-- File Name -->
@@ -55,7 +53,8 @@
                                     <!-- Configuration Section for Number of Rounds -->
                                     <div class="row mb-3">
                                         <div class="col-auto">
-                                            <label for="rounds" class="form-label">Number of Revision Rounds?</label>
+                                            <label for="rounds" class="form-label mt-2">Number of Revision
+                                                Rounds?</label>
                                         </div>
                                         <div class="col-2">
                                             <input type="number" name="rounds" class="form-control" value="1" min="1"
@@ -92,14 +91,13 @@
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                     data-bs-target="#manageRevisionsCollapse" aria-expanded="true"
                     aria-controls="manageRevisionsCollapse">
-                    Manage Revisions
+                    <strong>Manage Revisions</strong>
                 </button>
             </h2>
             <div id="manageRevisionsCollapse" class="accordion-collapse collapse show"
                 aria-labelledby="manageRevisionsHeader">
                 <div class="accordion-body">
                     <div class="mt-4">
-                        <h3>Manage Revisions</h3>
                         {% if revisions %}
                         {% set files = {} %}
                         {% for revision in revisions %}
@@ -158,7 +156,8 @@
                                                         <!-- New Input Field for Prompt -->
                                                         <div class="row">
                                                             <div class="col-auto mt-2">
-                                                                <label for="prompt" class="form-label">Optional Prompt Override: </label>
+                                                                <label for="prompt" class="form-label">Optional Prompt
+                                                                    Override: </label>
                                                             </div>
                                                             <div class="col">
                                                                 <input type="text" name="prompt" class="form-control">
@@ -186,58 +185,37 @@
         </div>
     </div>
 
-    <!-- Active Jobs Accordion -->
-    <div class="accordion mt-4" id="activeJobsAccordion">
+    <!-- Batched Jobs Accordion -->
+    <div class="accordion mt-4" id="batchedJobsAccordion">
         <div class="accordion-item">
-            <h2 class="accordion-header" id="activeJobsHeader">
+            <h2 class="accordion-header" id="batchedJobsHeader">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#activeJobsCollapse" aria-expanded="true" aria-controls="activeJobsCollapse">
-                    Active Jobs
+                    data-bs-target="#batchedJobsCollapse" aria-expanded="true" aria-controls="batchedJobsCollapse">
+                    <strong>Batched Jobs</strong>
                 </button>
             </h2>
-            <div id="activeJobsCollapse" class="accordion-collapse collapse" aria-labelledby="activeJobsHeader">
+            <div id="batchedJobsCollapse" class="accordion-collapse collapse" aria-labelledby="batchedJobsHeader">
                 <div class="accordion-body">
                     <div class="mt-4">
-                        <h3>Active Jobs</h3>
                         {% if active_jobs %}
                         <ul class="list-group">
                             {% for job in active_jobs %}
                             <li class="list-group-item">
                                 <p>Filename: {{ job.filename }}</p>
-                                <p>User ID: {{ job.user_id }}</p>
                                 <p>Status: {{ job.status }}</p>
-                                <!-- You can add more information as needed -->
+                                <p>Number of Rounds: {{ job.rounds }}</p>
                             </li>
                             {% endfor %}
                         </ul>
+                        <a href="{{ url_for('start_batch') }}" class="btn btn-primary btn-sm mt-2 ml-0">Start Batch</a>
                         {% else %}
-                        <p>No active jobs.</p>
+                        <p>No Batched Jobs.</p>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
-
-<!-- Disabling auto-refresh for now - can be enabled as desired -->
-<!-- <script>
-    // Function to check if any element has focus
-    function isAnyElementFocused() {
-        const focusedElement = document.activeElement;
-        return focusedElement && focusedElement !== document.body;
-    }
-
-    // Function to reload the page after a specified time interval
-    function reloadPage() {
-        if (!isAnyElementFocused()) {
-            location.reload();
-        }
-    }
-
-    // Set up the auto-refresh with a 10-second interval
-    setInterval(reloadPage, 10000);
-</script> -->
 
 {% endblock %}
