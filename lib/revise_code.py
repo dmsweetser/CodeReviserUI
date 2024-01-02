@@ -1,5 +1,6 @@
 import os
 import re
+import math
 from llama_cpp import Llama
 from config_manager import load_config, get_config, update_config
 
@@ -28,5 +29,9 @@ def run(original_code, llama_model, prompt):
 
     # Extract code from the revised markdown if enabled
     revised_code = extract_code_from_markdown(revised_markdown) if extract_from_markdown else revised_markdown
+
+    # Check if the revised code is at least 40% smaller than the original
+    if len(revised_code) < 0.6 * len(original_code):
+        return original_code
 
     return revised_code

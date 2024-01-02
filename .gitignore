@@ -3,4 +3,5 @@ uploads/*
 !uploads/placeholder.txt
 revisions.db
 *.json
+!config.json
 lib/__pycache__

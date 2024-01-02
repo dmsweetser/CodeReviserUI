@@ -3,6 +3,8 @@
 {% block content %}
 <div class="container w-100 h-100">
     <h2>Compare Revisions</h2>
-    <pre>{{ comparison_result|safe }}</pre>
+    <div class="diff-container">
+        {{ comparison_result | safe }}
+    </div>
 </div>
 {% endblock %}

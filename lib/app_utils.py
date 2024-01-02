@@ -318,14 +318,27 @@ def get_revision_content_bytes(revisions_db, filename, revision_id, user_id):
     return revision_content[0].encode() if revision_content else None
 
 def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, user_id, context):
-    """Compare two revisions using the compare_texts.run function."""
+    """Compare two revisions using the unified_diff and generate basic HTML representation."""
     content1 = get_revision_content(revisions_db, filename, revision_id1, user_id)
     content2 = get_revision_content(revisions_db, filename, revision_id2, user_id)
-    
-    differ = difflib.HtmlDiff()
-    comparison_result = differ.make_file(content2.splitlines(), content1.splitlines(), context=context)
 
-    # Wrap the diffed text in a <div> with inline styles
-    wrapped_comparison_result = f'<div style="overflow: auto; white-space: pre-wrap; max-width: 100%;">{comparison_result}</div>'
+    # Check if there are no differences between the two revisions
+    if content1 == content2:
+        return "No differences found between the two revisions."
 
-    return wrapped_comparison_result
+    # Generate the unified diff with a larger context to show the whole file
+    diff = difflib.unified_diff(content1.splitlines(), content2.splitlines(), n=context)
+
+    # Create a basic HTML representation of the unified diff
+    html_diff = '<html><head><style>pre { white-space: pre-wrap; }</style></head><body>'
+    html_diff += '<h2>Unified Diff</h2><pre>'
+    for line in diff:
+        if line.startswith('+'):
+            html_diff += '<span style="color: green;">{}</span><br>'.format(line)
+        elif line.startswith('-'):
+            html_diff += '<span style="color: red;">{}</span><br>'.format(line)
+        else:
+            html_diff += '{}<br>'.format(line)
+    html_diff += '</pre></body></html>'
+
+    return html_diff
