@@ -10,10 +10,9 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from app_utils import init_db, update_job_status, connect_db, load_jobs
-from app_utils import get_all_revisions, download_revision_file, delete_revision_file, add_job, start_batch_job
-from app_utils import get_revision_content, compare_two_revisions, update_revision_content, get_revision_content_bytes
-from config_manager import load_config, get_config, update_config
+from config_manager import *
+from job_manager import *
+from app_utils import *
 
 app = Flask(__name__)
 
@@ -68,6 +67,11 @@ def queue():
 @app.route('/start-batch', methods=['GET'])
 def start_batch():
     start_batch_job(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    return redirect(url_for('index'))
+
+@app.route('/clear_batch_job/<int:job_id>', methods=['GET'])
+def clear_batch_job(job_id):
+    clear_job(job_id)
     return redirect(url_for('index'))
 
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])

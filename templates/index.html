@@ -206,6 +206,9 @@
                                 <p>Status: {{ job.status }}</p>
                                 <p>Number of Rounds: {{ job.rounds }}</p>
                                 <p>Prompt Override: {{ job.prompt }}</p>
+                                <div style="float: right">
+                                    <a href="{{ url_for('clear_batch_job', job_id=job.job_id) }}" class="text-danger mt-2 ml-0">Clear Job From Batch</a>
+                                </div>                                
                             </li>
                             {% endfor %}
                         </ul>
