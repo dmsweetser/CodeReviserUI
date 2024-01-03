@@ -5,7 +5,10 @@ import tempfile
 import uuid
 from flask import abort
 from multiprocessing import Process
+
 import difflib
+from markupsafe import escape
+
 from llama_cpp import Llama
 import json
 import base64
@@ -192,18 +195,18 @@ def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, us
         return "No differences found between the two revisions."
 
     # Generate the unified diff with a larger context to show the whole file
-    diff = difflib.unified_diff(content1.splitlines(), content2.splitlines(), n=context)
+    diff = difflib.unified_diff(content2.splitlines(), content1.splitlines(), n=context)
 
     # Create a basic HTML representation of the unified diff
     html_diff = '<html><head><style>pre { white-space: pre-wrap; }</style></head><body>'
     html_diff += '<h2>Unified Diff</h2><pre>'
     for line in diff:
         if line.startswith('+'):
-            html_diff += '<span style="color: green;">{}</span><br>'.format(line)
+            html_diff += '<span style="color: green;">{}</span><br>'.format(escape(line))
         elif line.startswith('-'):
-            html_diff += '<span style="color: red;">{}</span><br>'.format(line)
+            html_diff += '<span style="color: red;">{}</span><br>'.format(escape(line))
         else:
-            html_diff += '{}<br>'.format(line)
+            html_diff += '{}<br>'.format(escape(line))
     html_diff += '</pre></body></html>'
 
     return html_diff

@@ -32,6 +32,6 @@
   "typical_p": 0.68,
   "tfs": 0.68,
   "max_tokens": 32768,
-  "default_prompt": "Iteratively improve the provided code by addressing identified issues, optimizing, and extending functionality. Use pseudocode, comments, and placeholders to document changes. Propose additional features or improvements through comments or pseudocode for subsequent iterations. Delete placeholders when the suggested feature is implemented or already present. Supply a comprehensive, well-commented overview of the code's overall purpose, covering every intended feature. Embed at least five TODO items specifying potential new features in the relevant code locations.",
+  "default_prompt": "Iteratively improve the provided code by addressing identified issues, optimizing, and extending functionality. Provide a complete revision so that anyone reviewing your new code can do so without having access to the prior code. Use pseudocode, comments, and placeholders to document changes. Propose additional features or improvements through comments or pseudocode for subsequent iterations. Delete placeholders when the suggested feature is implemented or already present. Supply a comprehensive, well-commented overview of the code's overall purpose, covering every intended feature. Embed at least five TODO items specifying potential new features in the relevant code locations.",
   "extract_from_markdown": true
 }

@@ -131,6 +131,9 @@ def clear_job(job_id):
 def process_batch(batch_requests_file, revisions_db, upload_folder, model_url, model_filename, max_context):
     llm = load_model(model_url, upload_folder, model_filename, max_context)
 
+    config = load_config()
+    batch_requests_file = get_config("job_file", "jobs.json")
+
     with open(batch_requests_file, 'r') as json_file:
         data = json.load(json_file)
 
@@ -148,9 +151,9 @@ def process_batch(batch_requests_file, revisions_db, upload_folder, model_url, m
             continue
 
         try:
-            update_job_status(filename, job_id, "STARTED")
+            update_job_status(batch_requests_file, job_id, "STARTED")
             generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
-            update_job_status(filename, job_id, "FINISHED")
+            update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:
             print(str(e))
-            update_job_status(filename, job_id, "ERROR")
+            update_job_status(batch_requests_file, job_id, "ERROR")
