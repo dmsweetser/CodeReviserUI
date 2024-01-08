@@ -4,8 +4,8 @@ import time
 import base64
 from multiprocessing import Process
 from flask import abort
-from config_manager import load_config, get_config
-from app_utils import load_model, generate_code_revision
+from lib.config_manager import load_config, get_config
+from lib.app_utils import load_model, generate_code_revision
 
 def load_jobs():
     jobs = []

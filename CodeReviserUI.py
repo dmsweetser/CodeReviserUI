@@ -10,9 +10,9 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
 
-from config_manager import *
-from job_manager import *
-from app_utils import *
+from lib.config_manager import *
+from lib.job_manager import *
+from lib.app_utils import *
 
 app = Flask(__name__)
 

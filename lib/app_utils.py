@@ -13,9 +13,25 @@ from llama_cpp import Llama
 import json
 import base64
 
-from config_manager import *
-from job_manager import *
-from lib import revise_code, build_readme, revise_code_gpu
+from lib.config_manager import *
+from lib.job_manager import *
+from lib.revise_code import *
+from lib.revise_code_gpu import *
+
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from exllamav2 import(
+    ExLlamaV2,
+    ExLlamaV2Config,
+    ExLlamaV2Cache,
+    ExLlamaV2Tokenizer,
+)
+
+from exllamav2.generator import (
+    ExLlamaV2BaseGenerator,
+    ExLlamaV2Sampler
+)
 
 def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)

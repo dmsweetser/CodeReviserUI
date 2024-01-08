@@ -2,7 +2,7 @@ import os
 import re
 import math
 from llama_cpp import Llama
-from config_manager import load_config, get_config, update_config
+from lib.config_manager import load_config, get_config, update_config
 
 def extract_code_from_markdown(markdown):
     code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
