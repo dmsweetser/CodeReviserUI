@@ -54,28 +54,21 @@ def update_job_status(job_file, job_id, status):
     with open(job_file, 'w') as json_file:
         json.dump(existing_contents, json_file, indent=2)
 
-def start_batch_job(revisions_db, upload_folder, model_url, model_filename, max_context):
+def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context):
 
     config = load_config()
     job_file = get_config("job_file", "jobs.json")
 
-    batch_process = Process(target=process_batch, args=(job_file, revisions_db, upload_folder, model_url, model_filename, max_context))
+    batch_process = Process(target=process_batch, args=(job_file, revisions_db, model_folder, model_url, model_filename, max_context))
     batch_process.start()
 
-def add_job(max_file_size, filename, file_contents, upload_folder, revisions_db, current_user, rounds, prompt):
+def add_job(max_file_size, filename, file_contents, model_folder, revisions_db, current_user, rounds, prompt):
     if not filename:
         abort(400, description="No filename provided")
 
     file_size = len(file_contents)
     if file_size > int(max_file_size):
         abort(413, description="File size exceeds the limit.")
-
-    file_path = os.path.join(upload_folder, filename)
-    try:
-        with open(file_path, 'wb') as file:
-            file.write(file_contents)
-    except IOError as e:
-        abort(500, description=str(e))
 
     user_id = current_user.id
 
@@ -128,8 +121,14 @@ def clear_job(job_id):
     with open(batch_requests_file, 'w') as json_file:
         json.dump(existing_contents, json_file, indent=2)
 
-def process_batch(batch_requests_file, revisions_db, upload_folder, model_url, model_filename, max_context):
-    llm = load_model(model_url, upload_folder, model_filename, max_context)
+def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
+    
+    loader = config_manager.get_config("job_file", "jobs.json")
+
+    if loader == "llama.cpp":
+        llm = load_model(model_url, model_folder, model_filename, max_context)
+    elif loader == "exllamav2":
+        llm, llm_settings = load_model_gpu(model_filename, max_context)
 
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
@@ -152,7 +151,12 @@ def process_batch(batch_requests_file, revisions_db, upload_folder, model_url, m
 
         try:
             update_job_status(batch_requests_file, job_id, "STARTED")
-            generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
+
+            if loader == "llama.cpp":
+                generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
+            elif loader == "exllamav2":
+                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, rounds, prompt, max_context)
+
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:
             print(str(e))

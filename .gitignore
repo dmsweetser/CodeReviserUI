@@ -1,6 +1,6 @@
 venv/
-uploads/*
-!uploads/placeholder.txt
+models/*
+!models/placeholder.txt
 revisions.db
 *.json
 !config.json

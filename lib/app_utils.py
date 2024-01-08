@@ -15,7 +15,7 @@ import base64
 
 from config_manager import *
 from job_manager import *
-from lib import revise_code, build_readme
+from lib import revise_code, build_readme, revise_code_gpu
 
 def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)
@@ -40,6 +40,21 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
         save_revision(revisions_db, filename, user_id, revision)
         code = revision
 
+def generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, max_context, rounds, prompt):
+    """Revise the given file using the LLM model and save it in the SQLite database."""
+    
+    code = file_contents.decode('utf-8')
+
+    for _ in range(rounds):
+        existing_revision = get_latest_revision(filename, user_id, revisions_db)
+        if existing_revision:
+            revision = revise_code_gpu.run(existing_revision, llm, llm_settings, max_context, prompt)
+        else:
+            save_revision(revisions_db, filename, user_id, code)
+            revision = revise_code_gpu.run(code, llm, llm_settings, max_context, prompt)
+        save_revision(revisions_db, filename, user_id, revision)
+        code = revision
+
 # Helper function to get the latest revision for a given file and user
 def get_latest_revision(filename, user_id, revisions_db):
     conn = connect_db(revisions_db)
@@ -58,15 +73,9 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
+def load_model(model_url, model_folder, model_filename, max_context):
 
-
-def cleanup_uploaded_file(filename):
-    abs_filepath = os.path.abspath(filename)
-    os.remove(abs_filepath)
-
-def load_model(model_url, upload_folder, model_filename, max_context):
-
-    model_path = upload_folder + model_filename
+    model_path = model_folder + model_filename
 
     if not os.path.isfile(model_path):
         try:
@@ -115,6 +124,42 @@ def load_model(model_url, upload_folder, model_filename, max_context):
     except Exception as e:
         print("Failed to create Llama object:", str(e))
         return None
+
+
+def load_model_gpu(model_filename, max_context):
+
+    model_path = model_folder + model_filename
+
+    if not os.path.isfile(model_path):
+        print("Model not found in path " + model_path)
+        return None
+
+    # Load configuration from config.json
+    config = load_config()
+
+        # Initialize model and cache
+    model_config = ExLlamaV2Config()
+    model_config.model_dir = model_path
+    model_config.prepare()
+
+    model = ExLlamaV2(model_config)
+    print("Loading model: " + model_path)
+
+    cache = ExLlamaV2Cache(model, lazy = True)
+    model.load_autosplit(cache)
+
+    tokenizer = ExLlamaV2Tokenizer(config)
+    generator = ExLlamaV2BaseGenerator(model, cache, tokenizer)
+
+    settings = ExLlamaV2Sampler.Settings()
+    settings.temperature = get_config("temperature", 1.0)
+    settings.top_k = get_config("top_k", 85)
+    settings.top_p = get_config("top_p", 0.99)
+    settings.top_a = 0.0
+    settings.token_repetition_penalty = get_config("repetition_penalty", 1.01)
+    settings.disallow_tokens(tokenizer, [tokenizer.eos_token_id])
+
+    return generator, settings
 
 # Helper function to connect to the revisions database
 def connect_db(revisions_db):

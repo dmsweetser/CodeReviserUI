@@ -21,7 +21,7 @@ config = load_config()
 
 # Set defaults if not present in the config
 app.secret_key = get_config('secret_key', 'your_secret_key')
-app.config['UPLOAD_FOLDER'] = get_config('upload_folder', 'uploads/')
+app.config['MODEL_FOLDER'] = get_config('model_folder', 'models/')
 app.config['REVISIONS_DB'] = get_config('revisions_db', 'revisions.db')
 app.config['MODEL_URL'] = get_config('model_url', "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_S.gguf")
 app.config['MODEL_FILENAME'] = get_config('model_filename', "mistral-7b-instruct-v0.2.Q5_K_S.gguf")
@@ -61,12 +61,12 @@ def queue():
         filename = request.form.get('fileName', '')
         file_contents = request.form.get('fileContents', '').encode('utf-8')
 
-    add_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
+    add_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['MODEL_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
     return redirect(url_for('index'))
 
 @app.route('/start-batch', methods=['GET'])
 def start_batch():
-    start_batch_job(app.config['REVISIONS_DB'], app.config['UPLOAD_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    start_batch_job(app.config['REVISIONS_DB'], app.config['MODEL_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     return redirect(url_for('index'))
 
 @app.route('/clear_batch_job/<int:job_id>', methods=['GET'])
@@ -105,7 +105,7 @@ def revise_from_revision(filename, revision_id):
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-    add_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['UPLOAD_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
+    add_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['MODEL_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
     return redirect(url_for('index'))
 
 @app.route('/delete/<string:filename>/<int:revision_id>', methods=['GET'])

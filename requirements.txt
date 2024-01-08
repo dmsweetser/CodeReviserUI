@@ -1,3 +1,5 @@
+torch
+exllamav2
 llama-cpp-python
 requests
 Flask

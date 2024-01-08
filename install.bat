@@ -4,14 +4,14 @@ setlocal enabledelayedexpansion
 echo Setting up Python virtual environment...
 
 REM Check if Python is installed
-where py -V:3.12 > nul 2>&1
+where py -V:3.11 > nul 2>&1
 if %errorlevel% neq 0 (
     echo Error: Python is not installed. Please install Python before running this script.
     exit /b 1
 )
 
 REM Create a virtual environment
-py -V:3.12 -m venv venv
+py -V:3.11 -m venv venv
 if %errorlevel% neq 0 (
     echo Error: Unable to create virtual environment.
     exit /b 1
