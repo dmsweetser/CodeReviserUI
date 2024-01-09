@@ -19,7 +19,7 @@ def run(original_code, llama_model, prompt):
     extract_from_markdown = get_config('extract_from_markdown', True)
 
     # Use the provided prompt if given, else use the one from config
-    prompt = prompt if prompt else config.get('prompt', default_prompt)    
+    prompt = prompt if prompt else default_prompt
 
     messages = [{"role": "system", "content": prompt + " Here is the provided code: ```" + original_code + "```"}]
     

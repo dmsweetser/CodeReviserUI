@@ -14,6 +14,7 @@ from exllamav2.generator import (
 )
 
 import time
+import random
 
 from lib.config_manager import load_config, get_config, update_config
 
@@ -29,17 +30,22 @@ def run(original_code, generator, settings, max_context, prompt):
     # Check if extracting from Markdown is enabled in config
     extract_from_markdown = get_config('extract_from_markdown', True)
 
-    max_new_tokens = max_context
+    # Use the provided prompt if given, else use the one from config
+    prompt = prompt if prompt else default_prompt
+
+    seed = random.randint(1, 100000)
+
+    max_new_tokens = int(max_context)
     generator.warmup()
     time_begin = time.time()
-    output = generator.generate_simple(f"<s>[INST] {default_prompt} Here is the current code: ```{prompt}``` [/INST]", settings, max_new_tokens, seed = 0)
+    output = generator.generate_simple(f"<s>[INST] {prompt} Here is the current code: ```{original_code}``` [/INST]", settings, max_new_tokens, seed = seed)
 
     # Extract code from the revised markdown if enabled
     revised_code = extract_code_from_markdown(output) if extract_from_markdown else revised_markdown
 
     time_end = time.time()
     time_total = time_end - time_begin
-    print(f"Response generated in {time_total:.2f} seconds, {max_new_tokens} tokens, {max_new_tokens / time_total:.2f} tokens/second")
+    print(f"Response generated in {time_total:.2f} seconds")
     
     # Check if the revised code is at least 40% smaller than the original
     if len(revised_code) < 0.6 * len(original_code):

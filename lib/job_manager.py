@@ -30,7 +30,7 @@ def load_jobs():
         pass
 
     # Define a custom sorting order for statuses
-    status_order = {'NEW': 0, 'STARTED': 1, 'FINISHED': 2}
+    status_order = {'NEW': 0, 'STARTED': 1, 'FINISHED': 2, 'ERROR': 3}
 
     # Sort the list of dictionaries based on the custom sorting order and 'rounds'
     sorted_jobs = sorted(jobs, key=lambda x: (status_order[x['status']], x['rounds']))
@@ -155,7 +155,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
             if loader == "llama.cpp":
                 generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
             elif loader == "exllamav2":
-                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, rounds, prompt, max_context)
+                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, max_context, rounds, prompt)
 
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:

@@ -15,8 +15,7 @@ import base64
 
 from lib.config_manager import *
 from lib.job_manager import *
-from lib.revise_code import *
-from lib.revise_code_gpu import *
+from lib import revise_code, revise_code_gpu
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -164,15 +163,15 @@ def load_model_gpu(model_folder, model_filename, max_context):
     cache = ExLlamaV2Cache(model, lazy = True)
     model.load_autosplit(cache)
 
-    tokenizer = ExLlamaV2Tokenizer(config)
+    tokenizer = ExLlamaV2Tokenizer(model_config)
     generator = ExLlamaV2BaseGenerator(model, cache, tokenizer)
 
     settings = ExLlamaV2Sampler.Settings()
-    settings.temperature = get_config("temperature", 1.0)
-    settings.top_k = get_config("top_k", 85)
-    settings.top_p = get_config("top_p", 0.99)
+    settings.temperature = int(get_config("temperature", 1.0))
+    settings.top_k = int(get_config("top_k", 85))
+    settings.top_p = int(get_config("top_p", 0.99))
     settings.top_a = 0.0
-    settings.token_repetition_penalty = get_config("repetition_penalty", 1.01)
+    settings.token_repetition_penalty = int(get_config("repetition_penalty", 1.01))
     settings.disallow_tokens(tokenizer, [tokenizer.eos_token_id])
 
     return generator, settings
