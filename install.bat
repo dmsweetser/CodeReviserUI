@@ -31,6 +31,7 @@ echo Virtual environment activated successfully.
 echo Installing required packages...
 
 REM Install required packages
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo Error: Unable to install required packages.

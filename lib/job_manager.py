@@ -5,7 +5,7 @@ import base64
 from multiprocessing import Process
 from flask import abort
 from lib.config_manager import load_config, get_config
-from lib.app_utils import load_model, generate_code_revision
+from lib.app_utils import load_model, load_model_gpu, generate_code_revision, generate_code_revision_gpu
 
 def load_jobs():
     jobs = []
@@ -123,12 +123,12 @@ def clear_job(job_id):
 
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
     
-    loader = config_manager.get_config("job_file", "jobs.json")
+    loader = get_config("loader", "exllamav2")
 
     if loader == "llama.cpp":
         llm = load_model(model_url, model_folder, model_filename, max_context)
     elif loader == "exllamav2":
-        llm, llm_settings = load_model_gpu(model_filename, max_context)
+        llm, llm_settings = load_model_gpu(model_folder, model_filename, max_context)
 
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")

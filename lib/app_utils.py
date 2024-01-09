@@ -142,11 +142,11 @@ def load_model(model_url, model_folder, model_filename, max_context):
         return None
 
 
-def load_model_gpu(model_filename, max_context):
+def load_model_gpu(model_folder, model_filename, max_context):
 
     model_path = model_folder + model_filename
 
-    if not os.path.isfile(model_path):
+    if not os.path.isdir(model_path):
         print("Model not found in path " + model_path)
         return None
 
