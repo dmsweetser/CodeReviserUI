@@ -123,10 +123,7 @@ def clear_job(job_id):
 
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
     
-    loader = get_config("loader", "gpu")
-
-    if loader == "cpu":
-        llm = load_model(model_url, model_folder, model_filename, max_context)
+    llm = load_model(model_url, model_folder, model_filename, max_context)
 
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
@@ -149,12 +146,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
 
         try:
             update_job_status(batch_requests_file, job_id, "STARTED")
-
-            if loader == "cpu":
-                generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
-            elif loader == "gpu":
-                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, max_context, rounds, prompt)
-
+            generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:
             print(str(e))

@@ -13,7 +13,7 @@ def run(original_code, llama_model, prompt):
     config = load_config()
 
     # Get default prompt from config or use a default value
-    default_prompt = get_config('default_prompt', "Revise and enhance the provided code by addressing issues, optimizing, and expanding features; implement pseudocode, comments, and placeholders; suggest additional features or improvements in comments or pseudocode for iterative development in subsequent rounds. If you implement something that was suggested in a placeholder, or if you see that the code already implements it, YOU MUST remove the placeholder. Include a properly-commented summary of the overall intent of the code that mentions every intended feature. Use the same programming language as the provided code. Include at least five TODO items for potential new features in the places in the code where they should be implemented.")
+    default_prompt = get_config('default_prompt', "Iteratively improve the provided code by addressing identified issues, optimizing, and extending functionality. Provide a complete revision so that anyone reviewing your new code can do so without having access to the prior code. Use pseudocode, comments, and placeholders to document changes. Propose additional features or improvements through comments or pseudocode for subsequent iterations. Remove placeholders when the suggested feature is implemented or already present. Embed at least five TODO items specifying potential new features inline in the code.")
 
     # Check if extracting from Markdown is enabled in config
     extract_from_markdown = get_config('extract_from_markdown', True)
@@ -21,7 +21,7 @@ def run(original_code, llama_model, prompt):
     # Use the provided prompt if given, else use the one from config
     prompt = prompt if prompt else default_prompt
 
-    messages = [{"role": "system", "content": prompt + " Here is the provided code: ```" + original_code + "```"}]
+    messages = [{"role": "user", "content": f"<s>[INST] {prompt} Here is the current code: ```{original_code}``` [/INST]"}]
     
     response = llama_model.create_chat_completion(messages=messages)
 

@@ -15,8 +15,7 @@ import base64
 
 from lib.config_manager import *
 from lib.job_manager import *
-from lib import revise_code, revise_code_gpu
-from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TextStreamer
+from lib import revise_code
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,21 +41,6 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
         else:
             save_revision(revisions_db, filename, user_id, code)
             revision = revise_code.run(code, llm, prompt)
-        save_revision(revisions_db, filename, user_id, revision)
-        code = revision
-
-def generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, max_context, rounds, prompt):
-    """Revise the given file using the LLM model and save it in the SQLite database."""
-    
-    code = file_contents.decode('utf-8')
-
-    for _ in range(rounds):
-        existing_revision = get_latest_revision(filename, user_id, revisions_db)
-        if existing_revision:
-            revision = revise_code_gpu.run(existing_revision, max_context, prompt)
-        else:
-            save_revision(revisions_db, filename, user_id, code)
-            revision = revise_code_gpu.run(code, max_context, prompt)
         save_revision(revisions_db, filename, user_id, revision)
         code = revision
 
