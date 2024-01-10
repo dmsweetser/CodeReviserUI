@@ -1,4 +1,6 @@
-exllamav2
+accelerate
+autoawq
+transformers
 llama-cpp-python
 requests
 Flask

@@ -5,7 +5,7 @@ import base64
 from multiprocessing import Process
 from flask import abort
 from lib.config_manager import load_config, get_config
-from lib.app_utils import load_model, load_model_gpu, generate_code_revision, generate_code_revision_gpu
+from lib.app_utils import *
 
 def load_jobs():
     jobs = []
@@ -123,12 +123,10 @@ def clear_job(job_id):
 
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
     
-    loader = get_config("loader", "exllamav2")
+    loader = get_config("loader", "gpu")
 
-    if loader == "llama.cpp":
+    if loader == "cpu":
         llm = load_model(model_url, model_folder, model_filename, max_context)
-    elif loader == "exllamav2":
-        llm, llm_settings = load_model_gpu(model_folder, model_filename, max_context)
 
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
@@ -152,10 +150,10 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
         try:
             update_job_status(batch_requests_file, job_id, "STARTED")
 
-            if loader == "llama.cpp":
+            if loader == "cpu":
                 generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
-            elif loader == "exllamav2":
-                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, max_context, rounds, prompt)
+            elif loader == "gpu":
+                generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, max_context, rounds, prompt)
 
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:

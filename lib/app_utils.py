@@ -16,21 +16,11 @@ import base64
 from lib.config_manager import *
 from lib.job_manager import *
 from lib import revise_code, revise_code_gpu
+from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TextStreamer
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from exllamav2 import(
-    ExLlamaV2,
-    ExLlamaV2Config,
-    ExLlamaV2Cache,
-    ExLlamaV2Tokenizer,
-)
-
-from exllamav2.generator import (
-    ExLlamaV2BaseGenerator,
-    ExLlamaV2Sampler
-)
 
 def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)
@@ -55,7 +45,7 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
         save_revision(revisions_db, filename, user_id, revision)
         code = revision
 
-def generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, llm, llm_settings, max_context, rounds, prompt):
+def generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, max_context, rounds, prompt):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     
     code = file_contents.decode('utf-8')
@@ -63,10 +53,10 @@ def generate_code_revision_gpu(revisions_db, filename, file_contents, user_id, l
     for _ in range(rounds):
         existing_revision = get_latest_revision(filename, user_id, revisions_db)
         if existing_revision:
-            revision = revise_code_gpu.run(existing_revision, llm, llm_settings, max_context, prompt)
+            revision = revise_code_gpu.run(existing_revision, max_context, prompt)
         else:
             save_revision(revisions_db, filename, user_id, code)
-            revision = revise_code_gpu.run(code, llm, llm_settings, max_context, prompt)
+            revision = revise_code_gpu.run(code, max_context, prompt)
         save_revision(revisions_db, filename, user_id, revision)
         code = revision
 
@@ -141,40 +131,6 @@ def load_model(model_url, model_folder, model_filename, max_context):
         return None
 
 
-def load_model_gpu(model_folder, model_filename, max_context):
-
-    model_path = model_folder + model_filename
-
-    if not os.path.isdir(model_path):
-        print("Model not found in path " + model_path)
-        return None
-
-    # Load configuration from config.json
-    config = load_config()
-
-        # Initialize model and cache
-    model_config = ExLlamaV2Config()
-    model_config.model_dir = model_path
-    model_config.prepare()
-
-    model = ExLlamaV2(model_config)
-    print("Loading model: " + model_path)
-
-    cache = ExLlamaV2Cache(model, lazy = True)
-    model.load_autosplit(cache)
-
-    tokenizer = ExLlamaV2Tokenizer(model_config)
-    generator = ExLlamaV2BaseGenerator(model, cache, tokenizer)
-
-    settings = ExLlamaV2Sampler.Settings()
-    settings.temperature = int(get_config("temperature", 1.0))
-    settings.top_k = int(get_config("top_k", 85))
-    settings.top_p = int(get_config("top_p", 0.99))
-    settings.top_a = 0.0
-    settings.token_repetition_penalty = int(get_config("repetition_penalty", 1.01))
-    settings.disallow_tokens(tokenizer, [tokenizer.eos_token_id])
-
-    return generator, settings
 
 # Helper function to connect to the revisions database
 def connect_db(revisions_db):
