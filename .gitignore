@@ -5,3 +5,4 @@ revisions.db
 *.json
 !config.json
 lib/__pycache__
+results*.txt

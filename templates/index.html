@@ -41,7 +41,8 @@
                                             <!-- File Name -->
                                             <div class="mb-3">
                                                 <label for="fileName" class="form-label">File Name:</label>
-                                                <input type="text" name="fileName" class="form-control">
+                                                <input type="text" name="fileName" class="form-control" pattern="[^\s]+"
+                                                    title="No spaces allowed">
                                             </div>
                                             <!-- File Contents -->
                                             <div class="mb-3">
@@ -204,11 +205,12 @@
                             <li class="list-group-item">
                                 <p>Filename: {{ job.filename }}</p>
                                 <p>Status: {{ job.status }}</p>
-                                <p>Number of Rounds: {{ job.rounds }}</p>
+                                <p>Remaining Rounds: {{ job.rounds }}</p>
                                 <p>Prompt Override: {{ job.prompt }}</p>
                                 <div style="float: right">
-                                    <a href="{{ url_for('clear_batch_job', job_id=job.job_id) }}" class="text-danger mt-2 ml-0">Clear Job From Batch</a>
-                                </div>                                
+                                    <a href="{{ url_for('clear_batch_job', job_id=job.job_id) }}"
+                                        class="text-danger mt-2 ml-0">Clear Job From Batch</a>
+                                </div>
                             </li>
                             {% endfor %}
                         </ul>
