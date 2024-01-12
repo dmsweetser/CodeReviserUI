@@ -29,20 +29,18 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
 
-def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt):
+def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     
     code = file_contents.decode('utf-8')
 
-    for _ in range(rounds):
-        existing_revision = get_latest_revision(filename, user_id, revisions_db)
-        if existing_revision:
-            revision = revise_code.run(existing_revision, llm, prompt)
-        else:
-            save_revision(revisions_db, filename, user_id, code)
-            revision = revise_code.run(code, llm, prompt)
-        save_revision(revisions_db, filename, user_id, revision)
-        code = revision
+    existing_revision = get_latest_revision(filename, user_id, revisions_db)
+    if existing_revision:
+        revision = revise_code.run(existing_revision, llm, prompt)
+    else:
+        save_revision(revisions_db, filename, user_id, code)
+        revision = revise_code.run(code, llm, prompt)
+    save_revision(revisions_db, filename, user_id, revision)
 
 # Helper function to get the latest revision for a given file and user
 def get_latest_revision(filename, user_id, revisions_db):

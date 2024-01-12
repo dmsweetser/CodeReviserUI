@@ -19,7 +19,7 @@
   "no_mmap": false,
   "mlock": false,
   "no_mul_mat_q": false,
-  "n_gpu_layers": 29,
+  "n_gpu_layers": 27,
   "tensor_split": "",
   "compress_pos_emb": 1,
   "alpha_value": 1,

@@ -100,7 +100,7 @@ def download_revision(filename, revision_id):
     new_filename = f"{root}_revision_{revision_id}.{extension}"
     return send_file(temp_file, as_attachment=True, download_name=new_filename)
 
-@app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['GET'])
+@app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['POST'])
 def revise_from_revision(filename, revision_id):
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')

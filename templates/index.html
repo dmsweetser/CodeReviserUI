@@ -137,7 +137,7 @@
                                                     class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
                                                 {% endif %}
                                                 {% if loop.first %} {# Check if it's the first (latest) revision #}
-                                                <form method="get"
+                                                <form method="post"
                                                     action="{{ url_for('revise_from_revision', filename=file_name, revision_id=revision[0]) }}">
                                                     <div class="row mt-2 mb-2">
                                                         <div class="col-auto">

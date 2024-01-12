@@ -37,20 +37,19 @@ def load_jobs():
 
     return sorted_jobs
 
-def update_job_status(job_file, job_id, status):
-    # Load existing contents if the file exists
+def update_job_status(job_file, job_id, status, rounds=None):
     existing_contents = []
     if os.path.exists(job_file):
         with open(job_file, 'r') as existing_file:
             existing_contents = json.load(existing_file)
 
-    # Find the job with the specified job_id and update its status
     for job in existing_contents:
         if job.get('job_id') == job_id:
             job['status'] = status
+            if rounds is not None:
+                job['rounds'] = rounds
             break
 
-    # Save the updated contents back to the file
     with open(job_file, 'w') as json_file:
         json.dump(existing_contents, json_file, indent=2)
 
@@ -122,9 +121,7 @@ def clear_job(job_id):
         json.dump(existing_contents, json_file, indent=2)
 
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
-    
     llm = load_model(model_url, model_folder, model_filename, max_context)
-
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
 
@@ -141,12 +138,16 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
         job_id = request_data['job_id']
 
         if status == "FINISHED":
-            # Skip this iteration
             continue
 
         try:
             update_job_status(batch_requests_file, job_id, "STARTED")
-            generate_code_revision(revisions_db, filename, file_contents, user_id, llm, rounds, prompt)
+
+            for current_round in range(1, rounds + 1):
+                # Execute code for each round, subtract from rounds after each round
+                generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
+                update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
+
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:
             print(str(e))
