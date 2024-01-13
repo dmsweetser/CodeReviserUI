@@ -34,23 +34,29 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
     
     code = file_contents.decode('utf-8')
 
-    existing_revision = get_latest_revision(filename, user_id, revisions_db)
-    if existing_revision:
-        revision = revise_code.run(existing_revision, llm, prompt)
+    existing_revision, prior_revision = get_latest_revisions(filename, user_id, revisions_db)
+
+    if existing_revision and prior_revision:
+        revision = revise_code.run(existing_revision, prior_revision, llm, prompt)
+    elif existing_revision:
+        revision = revise_code.run(existing_revision, None, llm, prompt)
     else:
         save_revision(revisions_db, filename, user_id, code)
-        revision = revise_code.run(code, llm, prompt)
-    save_revision(revisions_db, filename, user_id, revision)
+        revision = run_llm(code, prompt)
+        save_revision(revisions_db, filename, user_id, revision)
 
-# Helper function to get the latest revision for a given file and user
-def get_latest_revision(filename, user_id, revisions_db):
+def get_latest_revisions(filename, user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT 1", (filename, user_id))
-    revision = c.fetchone()
+    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT 2", (filename, user_id))
+    revisions = c.fetchmany(2)
     conn.close()
-    return revision[0] if revision else None
-
+    if len(revisions) == 2:
+        return revisions[0][0], revisions[1][0]
+    elif len(revisions) == 1:
+        return revisions[0][0]
+    else:
+        return None
 
 def save_revision(revisions_db, filename, user_id, revision):
     """Save a new revision of the given file in the SQLite database."""

@@ -6,6 +6,7 @@ from multiprocessing import Process
 from flask import abort
 from lib.config_manager import load_config, get_config
 from lib.app_utils import *
+import gc
 
 def load_jobs():
     jobs = []
@@ -121,7 +122,6 @@ def clear_job(job_id):
         json.dump(existing_contents, json_file, indent=2)
 
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
-    llm = load_model(model_url, model_folder, model_filename, max_context)
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
 
@@ -144,9 +144,12 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
             update_job_status(batch_requests_file, job_id, "STARTED")
 
             for current_round in range(1, rounds + 1):
-                # Execute code for each round, subtract from rounds after each round
+                llm = load_model(model_url, model_folder, model_filename, max_context)
                 generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
                 update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
+                del llm
+                gc.collect()
+                time.sleep(10)
 
             update_job_status(batch_requests_file, job_id, "FINISHED")
         except Exception as e:

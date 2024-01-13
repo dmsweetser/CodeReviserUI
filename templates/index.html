@@ -132,9 +132,9 @@
                                                     class="btn btn-danger btn-sm ms-2">Delete Revision</a>
                                                 <a href="{{ url_for('edit_revision', filename=file_name, revision_id=revision[0]) }}"
                                                     class="btn btn-warning btn-sm ms-2">Edit Contents</a>
-                                                {% if not loop.last %} {# Check if it's not the last revision #}
+                                                {% if not loop.last %}
                                                 <a target="_blank"
-                                                    href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=revision[0]-1) }}"
+                                                    href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=file_revisions[loop.index-1][0]) }}"
                                                     class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
                                                 {% endif %}
                                                 {% if loop.first %} {# Check if it's the first (latest) revision #}
