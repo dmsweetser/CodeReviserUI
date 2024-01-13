@@ -34,15 +34,17 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
     
     code = file_contents.decode('utf-8')
 
-    existing_revision, prior_revision = get_latest_revisions(filename, user_id, revisions_db)
+    revisions = get_latest_revisions(filename, user_id, revisions_db)
 
-    if existing_revision and prior_revision:
+    if revisions and len(revisions) == 2:
+        existing_revision, prior_revision = revisions
         revision = revise_code.run(existing_revision, prior_revision, llm, prompt)
-    elif existing_revision:
+    elif revisions and len(revisions) == 1:
+        existing_revision = revisions[0]
         revision = revise_code.run(existing_revision, None, llm, prompt)
     else:
         save_revision(revisions_db, filename, user_id, code)
-        revision = run_llm(code, prompt)
+        revision = revise_code.run(code, None, llm, prompt)
         save_revision(revisions_db, filename, user_id, revision)
 
 def get_latest_revisions(filename, user_id, revisions_db):
@@ -51,10 +53,9 @@ def get_latest_revisions(filename, user_id, revisions_db):
     c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT 2", (filename, user_id))
     revisions = c.fetchmany(2)
     conn.close()
-    if len(revisions) == 2:
-        return revisions[0][0], revisions[1][0]
-    elif len(revisions) == 1:
-        return revisions[0][0]
+
+    if revisions:
+        return tuple(revision[0] for revision in revisions)
     else:
         return None
 

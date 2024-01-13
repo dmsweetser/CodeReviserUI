@@ -14,7 +14,7 @@
   "max_tokens": 32768,
   "n_batch": 64, 
   "cpu": false,
-  "threads": 2,
+  "threads": 0,
   "threads_batch": 4,
   "no_mmap": true,
   "mlock": true,
