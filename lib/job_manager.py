@@ -125,33 +125,46 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
     config = load_config()
     batch_requests_file = get_config("job_file", "jobs.json")
 
-    with open(batch_requests_file, 'r') as json_file:
-        data = json.load(json_file)
+    while True:
+        with open(batch_requests_file, 'r') as json_file:
+            data = json.load(json_file)
 
-    for request_data in data:
-        filename = request_data['filename']
-        file_contents = base64.b64decode(request_data['file_contents'])
-        user_id = request_data['user_id']
-        rounds = request_data['rounds']
-        prompt = request_data['prompt']
-        status = request_data['status']
-        job_id = request_data['job_id']
+        all_finished = all(request_data['status'] == "FINISHED" for request_data in data)
 
-        if status == "FINISHED":
-            continue
+        if all_finished:
+            break
 
-        try:
-            update_job_status(batch_requests_file, job_id, "STARTED")
+        for request_data in data:
+            filename = request_data['filename']
+            file_contents = base64.b64decode(request_data['file_contents'])
+            user_id = request_data['user_id']
+            rounds = request_data['rounds']
+            prompt = request_data['prompt']
+            status = request_data['status']
+            job_id = request_data['job_id']
 
-            for current_round in range(1, rounds + 1):
-                llm = load_model(model_url, model_folder, model_filename, max_context)
-                generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
-                update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
-                del llm
-                gc.collect()
-                time.sleep(10)
+            if status == "FINISHED":
+                continue
 
-            update_job_status(batch_requests_file, job_id, "FINISHED")
-        except Exception as e:
-            print(str(e))
-            update_job_status(batch_requests_file, job_id, "ERROR")
+            try:
+                update_job_status(batch_requests_file, job_id, "STARTED")
+
+                if rounds == -1:
+                    llm = load_model(model_url, model_folder, model_filename, max_context)
+                    generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
+                    update_job_status(batch_requests_file, job_id, "FINISHED")
+                    del llm
+                    gc.collect()
+                    time.sleep(10)
+                else:
+                    for current_round in range(1, rounds + 1):
+                        llm = load_model(model_url, model_folder, model_filename, max_context)
+                        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
+                        update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
+                        del llm
+                        gc.collect()
+                        time.sleep(10)
+                    update_job_status(batch_requests_file, job_id, "FINISHED")
+            except Exception as e:
+                print(str(e))
+                update_job_status(batch_requests_file, job_id, "ERROR")
