@@ -150,15 +150,14 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                 update_job_status(batch_requests_file, job_id, "STARTED")
 
                 if rounds == -1:
-                    llm = load_model(model_url, model_folder, model_filename, max_context)
+                    llm = load_model(model_url, model_folder, model_filename, max_context, True)
                     generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
-                    update_job_status(batch_requests_file, job_id, "FINISHED")
                     del llm
                     gc.collect()
                     time.sleep(10)
                 else:
                     for current_round in range(1, rounds + 1):
-                        llm = load_model(model_url, model_folder, model_filename, max_context)
+                        llm = load_model(model_url, model_folder, model_filename, max_context, True)
                         generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
                         update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
                         del llm

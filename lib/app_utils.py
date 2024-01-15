@@ -32,6 +32,8 @@ def init_db(revisions_db):
 def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt):
     """Revise the given file using the LLM model and save it in the SQLite database."""
     
+    print(f"\n\n\nGenerating code revision for {filename}\n\n\n")
+
     code = file_contents.decode('utf-8')
 
     revisions = get_latest_revisions(filename, user_id, revisions_db)
@@ -67,7 +69,7 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def load_model(model_url, model_folder, model_filename, max_context):
+def load_model(model_url, model_folder, model_filename, max_context, use_gpu):
 
     model_path = model_folder + model_filename
 
@@ -113,6 +115,9 @@ def load_model(model_url, model_folder, model_filename, max_context):
     # Update llama_params with values from config or use defaults
     llama_params = {key: get_config(key, default_value) for key, default_value in default_llama_params.items()}
 
+    if use_gpu == False:
+        llama_params["n_gpu_layers"] = 0
+        
     try:
         return Llama(model_path, **llama_params)
     except Exception as e:
