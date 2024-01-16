@@ -21,10 +21,12 @@ def run(original_code, prior_revision, llama_model, prompt):
     # Use the provided prompt if given, else use the one from config
     prompt = prompt if prompt else default_prompt
 
-    if prior_revision:
-        message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\nHere is the most recent prior revision: ```{prior_revision}```\n[/INST]\n"
-    else:
-        message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\n[/INST]\n"
+    # if prior_revision:
+    #     message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\nHere is the most recent prior revision: ```{prior_revision}```\n[/INST]\n"
+    # else:
+    #     message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\n[/INST]\n"
+
+    message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\n[/INST]\n"
 
     messages = [{"role": "user", "content": message}]
     
@@ -35,4 +37,8 @@ def run(original_code, prior_revision, llama_model, prompt):
     # Extract code from the revised markdown if enabled
     revised_code = extract_code_from_markdown(revised_markdown) if extract_from_markdown else revised_markdown
 
-    return revised_code
+    if len(revised_code) < .3 * len(original_code):
+        print("Generated code was too short")
+        return original_code
+    else:
+        return revised_code

@@ -41,9 +41,11 @@ def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, 
     if revisions and len(revisions) == 2:
         existing_revision, prior_revision = revisions
         revision = revise_code.run(existing_revision, prior_revision, llm, prompt)
+        save_revision(revisions_db, filename, user_id, revision)
     elif revisions and len(revisions) == 1:
         existing_revision = revisions[0]
         revision = revise_code.run(existing_revision, None, llm, prompt)
+        save_revision(revisions_db, filename, user_id, revision)
     else:
         save_revision(revisions_db, filename, user_id, code)
         revision = revise_code.run(code, None, llm, prompt)
@@ -117,7 +119,7 @@ def load_model(model_url, model_folder, model_filename, max_context, use_gpu):
 
     if use_gpu == False:
         llama_params["n_gpu_layers"] = 0
-        
+
     try:
         return Llama(model_path, **llama_params)
     except Exception as e:

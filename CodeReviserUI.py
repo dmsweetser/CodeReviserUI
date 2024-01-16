@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 from lib.config_manager import *
 from lib.job_manager import *
 from lib.app_utils import *
-from lib import ad_hoc_chat_manager
+from lib.ad_hoc_chat_manager import *
 
 app = Flask(__name__)
 
@@ -132,10 +132,10 @@ def ad_hoc_chat():
     if request.method == 'POST':
         prompt = request.form.get('prompt', '')
         llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], False)
-        ad_hoc_chat_manager.run(llm, prompt)
+        ad_hoc_chat_manager.run_batch(llm, prompt)
         return redirect(url_for('ad_hoc_chat'))
     else:
-        return render_template('ad_hoc_chat.html', current_result=ad_hoc_chat_manager.current_result)
+        return render_template('ad_hoc_chat.html', result=ad_hoc_chat_manager.get())
 
 @app.errorhandler(HTTPError)
 def handle_http_errors(e):
