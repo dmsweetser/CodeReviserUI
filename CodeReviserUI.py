@@ -5,7 +5,7 @@ import tempfile
 import uuid
 import requests
 from flask_login import LoginManager, UserMixin, current_user
-from multiprocessing import Process
+from multiprocessing import Process, Value, Array
 from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
@@ -13,9 +13,10 @@ from werkzeug.utils import secure_filename
 from lib.config_manager import *
 from lib.job_manager import *
 from lib.app_utils import *
-from lib.ad_hoc_chat_manager import *
+from lib import ad_hoc_chat_manager
 
 app = Flask(__name__)
+current_result = Array('c', b'\0' * 32768)
 
 # Load existing config or set defaults
 config = load_config()
@@ -85,9 +86,10 @@ def edit_revision(filename, revision_id):
         update_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id, new_content)
         return redirect(url_for('index'))
 
-@app.route('/compare-revisions/<string:filename>/<int:revision_id1>/<int:revision_id2>', methods=['GET'])
-def compare_revisions(filename, revision_id1, revision_id2):
+@app.route('/compare-revisions/<string:filename>/<int:revision_id1>', methods=['GET'])
+def compare_revisions(filename, revision_id1):
     try:
+        revision_id2 = get_prior_revision(current_user.id, app.config['REVISIONS_DB'], filename, revision_id1)
         comparison_result = compare_two_revisions(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id1, revision_id2, current_user.id, 10000)
         return render_template('compare_revisions.html', filename=filename, revision_id1=revision_id1, revision_id2=revision_id2, comparison_result=comparison_result)
     except Exception as e:
@@ -127,15 +129,26 @@ def edit_config():
 def handle_model_not_found(e):
     abort(500, description="Model not found")
 
+def check_and_define_variable(var_name, default_value):
+    if var_name not in globals():
+        globals()[var_name] = default_value
+
 @app.route('/ad_hoc_chat', methods=['GET', 'POST'])
 def ad_hoc_chat():
+    global current_result
+
     if request.method == 'POST':
         prompt = request.form.get('prompt', '')
         llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], False)
-        ad_hoc_chat_manager.run_batch(llm, prompt)
+        with current_result.get_lock():
+            current_result.value = b''  # Reset shared memory for each request
+        ad_hoc_chat_manager.run_batch(llm, prompt, current_result)
         return redirect(url_for('ad_hoc_chat'))
     else:
-        return render_template('ad_hoc_chat.html', result=ad_hoc_chat_manager.get())
+        with current_result.get_lock():
+            result_value = current_result.value.decode('utf-8')
+        return render_template('ad_hoc_chat.html', result=result_value)
+
 
 @app.errorhandler(HTTPError)
 def handle_http_errors(e):

@@ -134,7 +134,7 @@
                                                     class="btn btn-warning btn-sm ms-2">Edit Contents</a>
                                                 {% if not loop.last %}
                                                 <a target="_blank"
-                                                    href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0], revision_id2=file_revisions[loop.index-1][0]) }}"
+                                                    href="{{ url_for('compare_revisions', filename=file_name, revision_id1=revision[0]) }}"
                                                     class="btn btn-primary btn-sm ms-2">Compare With Previous</a>
                                                 {% endif %}
                                                 {% if loop.first %} {# Check if it's the first (latest) revision #}
@@ -148,7 +148,7 @@
                                                         </div>
                                                         <div class="col-1">
                                                             <input type="number" name="rounds" class="form-control"
-                                                                value="1" min="1" required>
+                                                                value="1" min="-1" required>
                                                         </div>
                                                         <div class="col-auto mt-2">
                                                             <label for="rounds" class="form-label">rounds</label>

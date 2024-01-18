@@ -23,4 +23,26 @@
     </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set an interval to refresh the page every 5 seconds
+        var refreshInterval = setInterval(function() {
+            location.reload();
+        }, 5000);
+
+        // Stop refreshing when the input has focus
+        var promptInput = document.querySelector('input[name="prompt"]');
+        promptInput.addEventListener('focus', function() {
+            clearInterval(refreshInterval);
+        });
+
+        // Resume refreshing when the input loses focus
+        promptInput.addEventListener('blur', function() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 500);
+        });
+    });
+</script>
+
 {% endblock %}
