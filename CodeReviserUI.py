@@ -105,7 +105,7 @@ def download_revision(filename, revision_id):
 
 @app.route('/revise-from-revision/<string:filename>/<int:revision_id>', methods=['POST'])
 def revise_from_revision(filename, revision_id):
-    rounds = int(request.form.get('rounds', 1))
+    rounds = int(request.form.get('rounds', 1))  
     prompt = request.form.get('prompt', '')
     revision_content = get_revision_content_bytes(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
     add_job(app.config['MAX_FILE_SIZE'], filename, revision_content, app.config['MODEL_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)

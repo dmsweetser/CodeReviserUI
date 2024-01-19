@@ -13,13 +13,18 @@ def run(original_code, prior_revision, llama_model, prompt):
     config = load_config()
 
     # Get default prompt from config or use a default value
-    default_prompt = get_config('default_prompt', "Improve the provided code by addressing identified issues, optimizing, and extending functionality. Provide ONLY ONE complete revision so that anyone reviewing your new code can do so without having access to the prior code. Use pseudocode, comments, and placeholders to document changes. Propose additional features or improvements through comments or pseudocode for subsequent iterations. Remove placeholders when the suggested feature is implemented or already present. Embed at least five TODO items specifying potential new features inline in the code. Provide your revision as fast as you possibly can.")
+    default_prompt = get_config('default_prompt', "")
+    revision_prompt = get_config('revision_prompt', "") 
 
     # Check if extracting from Markdown is enabled in config
     extract_from_markdown = get_config('extract_from_markdown', True)
 
-    # Use the provided prompt if given, else use the one from config
-    prompt = prompt if prompt else default_prompt
+    if "TODO" in original_code or "PLACEHOLDER" in original_code:
+        # Use the provided prompt if given, else use the one from config
+        prompt = prompt if prompt else revision_prompt
+    else:
+        # Use the provided prompt if given, else use the one from config
+        prompt = prompt if prompt else default_prompt
 
     # if prior_revision:
     #     message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\nHere is the most recent prior revision: ```{prior_revision}```\n[/INST]\n"
