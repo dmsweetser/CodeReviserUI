@@ -19,17 +19,12 @@ def run(original_code, prior_revision, llama_model, prompt):
     # Check if extracting from Markdown is enabled in config
     extract_from_markdown = get_config('extract_from_markdown', True)
 
-    if "TODO" in original_code or "PLACEHOLDER" in original_code:
+    if "TODO" in original_code.upper() or "PLACEHOLDER" in original_code.upper():
         # Use the provided prompt if given, else use the one from config
         prompt = prompt if prompt else revision_prompt
     else:
         # Use the provided prompt if given, else use the one from config
         prompt = prompt if prompt else default_prompt
-
-    # if prior_revision:
-    #     message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\nHere is the most recent prior revision: ```{prior_revision}```\n[/INST]\n"
-    # else:
-    #     message = f"<s>[INST]\n{prompt}\nHere is the current code: ```{original_code}```\n[/INST]\n"
 
     message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\n[/INST]\n"
 
