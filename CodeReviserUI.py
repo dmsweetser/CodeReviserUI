@@ -84,7 +84,7 @@ def process_request():
     gc.collect()
     time.sleep(10)
 
-    return jsonify({'result': revision})
+    return revision
 
 @app.route('/start-batch', methods=['GET'])
 def start_batch():
