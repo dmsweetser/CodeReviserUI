@@ -1,7 +1,7 @@
 venv/
 models/*
 !models/placeholder.txt
-revisions.db
+revisions*.db
 *.json
 !config.json
 lib/__pycache__

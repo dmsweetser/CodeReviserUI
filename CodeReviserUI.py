@@ -136,15 +136,6 @@ def delete_revision(filename, revision_id):
     result = delete_revision_file(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
     return redirect(url_for('index'))
 
-@app.route('/edit_config', methods=['GET', 'POST'])
-def edit_config():
-    if request.method == 'POST':
-        for key, value in request.form.items():
-            update_config(key, value)
-        return redirect(url_for('index'))
-    config = load_config()
-    return render_template('edit_config.html', config=config)
-
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):
     abort(500, description="Model not found")

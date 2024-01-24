@@ -2,11 +2,13 @@ import os
 import json
 import time
 import base64
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from flask import abort
 from lib.config_manager import load_config, get_config
 from lib.app_utils import *
 import gc
+from itertools import cycle
+import ast
 
 def load_jobs():
     jobs = []
@@ -124,7 +126,9 @@ def clear_job(job_id):
 def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
     config = load_config()
     batch_requests_file = get_config("job_file", "")
+
     client_instances = get_config("other_instances","")
+    client_instances = ast.literal_eval(client_instances)
 
     if len(client_instances) > 0:
         processing_status_queue = Queue()
@@ -140,7 +144,8 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
             job_id = request_data['job_id']
 
             # Wait until a client is available
-            while processing_status_queue.get():
+            while not processing_status_queue.empty():
+                processing_status_queue.get()
                 time.sleep(60)
 
             current_client = next(clients)
@@ -197,13 +202,27 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                     update_job_status(batch_requests_file, job_id, "ERROR")
 
 def process_job(revisions_db, job_data, client_url, processing_status_queue):
+
+    batch_requests_file = get_config("job_file", "")
+
     try:
-        update_job_status(job_data['file'], job_data['job_id'], "STARTED")
+        update_job_status(batch_requests_file, job_data['job_id'], "STARTED")
         print("\n\n\n\n\n")
         filename = job_data['filename']
         file_contents = base64.b64decode(job_data['file_contents'])
         user_id = job_data['user_id']
         prompt = job_data['prompt']
+
+        revisions = get_latest_revisions(filename, user_id, revisions_db)
+
+        if revisions and len(revisions) == 2:
+            existing_revision, prior_revision = revisions
+            file_contents = existing_revision
+        elif revisions and len(revisions) == 1:
+            existing_revision = revisions[0]
+            file_contents = existing_revision
+        else:
+            save_revision(revisions_db, filename, user_id, file_contentscode)
 
         url = f'{client_url}/process_request'
         data = {
@@ -218,13 +237,13 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
             revision = response.json()['result']
             save_revision(revisions_db, filename, user_id, revision)
             print(f"Job {job_data['job_id']} completed. Result: {result}")
-            update_job_status(job_data['file'], job_data['job_id'], "FINISHED")
+            update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
         else:
             print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
-            update_job_status(job_data['file'], job_data['job_id'], "ERROR")
+            update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
 
     except Exception as e:
         print(str(e))
-        update_job_status(job_data['file'], job_data['job_id'], "ERROR")
+        update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
 
     processing_status_queue.put(True)
