@@ -75,7 +75,7 @@ def process_request():
 
     prompt = request.form.get('prompt', '')
     filename = request.form.get('fileName', '')
-    file_contents = request.form.get('fileContents', '').encode('utf-8')
+    file_contents = request.form.get('fileContents', '')
 
     llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], True)
     revision = revise_code.run(file_contents, llm, prompt)

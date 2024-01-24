@@ -40,21 +40,25 @@ def load_jobs():
 
     return sorted_jobs
 
+# Create a lock
+update_job_status_lock = Lock()
+
 def update_job_status(job_file, job_id, status, rounds=None):
-    existing_contents = []
-    if os.path.exists(job_file):
-        with open(job_file, 'r') as existing_file:
-            existing_contents = json.load(existing_file)
+    with update_job_status_lock:
+        existing_contents = []
+        if os.path.exists(job_file):
+            with open(job_file, 'r') as existing_file:
+                existing_contents = json.load(existing_file)
 
-    for job in existing_contents:
-        if job.get('job_id') == job_id:
-            job['status'] = status
-            if rounds is not None:
-                job['rounds'] = rounds
-            break
+        for job in existing_contents:
+            if job.get('job_id') == job_id:
+                job['status'] = status
+                if rounds is not None:
+                    job['rounds'] = rounds
+                break
 
-    with open(job_file, 'w') as json_file:
-        json.dump(existing_contents, json_file, indent=2)
+        with open(job_file, 'w') as json_file:
+            json.dump(existing_contents, json_file, indent=2)
 
 def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context):
 
