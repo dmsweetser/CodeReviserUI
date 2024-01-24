@@ -227,7 +227,7 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
             existing_revision = revisions[0]
             file_contents = existing_revision
         else:
-            save_revision(revisions_db, filename, user_id, file_contentscode)
+            save_revision(revisions_db, filename, user_id, file_contents)
 
         url = f'{client_url}/process_request'
         data = {
