@@ -83,7 +83,7 @@ def process_request():
     del llm
     gc.collect()
     time.sleep(10)
-
+    print(revision)
     return revision
 
 @app.route('/start-batch', methods=['GET'])
