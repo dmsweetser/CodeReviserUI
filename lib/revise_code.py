@@ -8,7 +8,7 @@ def extract_code_from_markdown(markdown):
     code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
     return code_blocks[0].strip() if code_blocks else markdown.strip()
 
-def run(original_code, prior_revision, llama_model, prompt):
+def run(original_code, llama_model, prompt):
     # Load configuration from config.json
     config = load_config()
 

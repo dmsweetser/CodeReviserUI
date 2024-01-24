@@ -66,6 +66,26 @@ def queue():
     add_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['MODEL_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
     return redirect(url_for('index'))
 
+@app.route('/processing_request', methods=['GET'])
+def get_processing_status():
+    return jsonify({'busy': processing_request})
+
+@app.route('/process_request', methods=['POST'])
+def process_request():
+
+    prompt = request.form.get('prompt', '')
+    filename = request.form.get('fileName', '')
+    file_contents = request.form.get('fileContents', '').encode('utf-8')
+
+    llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], True)
+    revision = revise_code.run(file_contents, llm, prompt)
+
+    del llm
+    gc.collect()
+    time.sleep(10)
+
+    return jsonify({'result': revision})
+
 @app.route('/start-batch', methods=['GET'])
 def start_batch():
     start_batch_job(app.config['REVISIONS_DB'], app.config['MODEL_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
@@ -155,4 +175,4 @@ def handle_http_errors(e):
     abort(500, description="Failed to download model.")
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0")

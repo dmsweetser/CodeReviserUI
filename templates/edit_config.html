@@ -12,7 +12,7 @@
                 <label for="{{ key }}" class="form-label">{{ key.capitalize().replace('_', ' ') }}</label>
             </div>
             <div class="col-8">
-                <input type="text" class="form-control" id="{{ key }}" name="{{ key }}" value="{{ value }}" required>
+                <input type="text" class="form-control" id="{{ key }}" name="{{ key }}" value="{{ value }}">
             </div>
         </div>
         {% endfor %}
