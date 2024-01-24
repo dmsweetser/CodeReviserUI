@@ -31,8 +31,11 @@ echo Virtual environment activated successfully.
 echo Installing required packages...
 
 REM Install required packages
-set CMAKE_ARGS=-DLLAMA_CUBLAS=on
-set FORCE_CMAKE=1
+
+REM Uncomment these to enable CUDA
+REM set CMAKE_ARGS=-DLLAMA_CUBLAS=on
+REM set FORCE_CMAKE=1
+
 pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
