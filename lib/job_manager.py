@@ -241,7 +241,7 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
         if response.status_code == 200:
             revision = response.content
             save_revision(revisions_db, filename, user_id, revision)
-            print(f"Job {job_data['job_id']} completed. Result: {result}")
+            print(f"Job {job_data['job_id']} completed. Result: {revision}")
             update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
         else:
             print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
