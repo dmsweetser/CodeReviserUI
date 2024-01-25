@@ -136,32 +136,39 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
     client_instances = ast.literal_eval(client_instances)
 
     if len(client_instances) > 0:
-        processing_status_queue = Queue()
+        while True:
+            
+            processing_status_queue = Queue()
 
-        with open(batch_requests_file, 'r') as json_file:
-            data = json.load(json_file)
+            with open(batch_requests_file, 'r') as json_file:
+                data = json.load(json_file)
 
-        processes = []
-        clients = cycle(client_instances)
+            all_finished = all(request_data['status'] == "FINISHED" for request_data in data)
 
-        for request_data in data:
-            filename = request_data['filename']
-            job_id = request_data['job_id']
+            if all_finished:
+                break
 
-            # Wait until a client is available
-            while not processing_status_queue.empty():
-                processing_status_queue.get()
-                time.sleep(60)
+            processes = []
+            clients = cycle(client_instances)
 
-            current_client = next(clients)
-            client_url = f'http://{current_client}'
+            for request_data in data:
+                filename = request_data['filename']
+                job_id = request_data['job_id']
 
-            process = Process(target=process_job, args=(revisions_db, request_data, client_url, processing_status_queue))
-            processes.append(process)
-            process.start()
+                # Wait until a client is available
+                while not processing_status_queue.empty():
+                    processing_status_queue.get()
+                    time.sleep(60)
 
-        for process in processes:
-            process.join()
+                current_client = next(clients)
+                client_url = f'http://{current_client}'
+
+                process = Process(target=process_job, args=(revisions_db, request_data, client_url, processing_status_queue))
+                processes.append(process)
+                process.start()
+
+            for process in processes:
+                process.join()
     else:
         while True:
             with open(batch_requests_file, 'r') as json_file:

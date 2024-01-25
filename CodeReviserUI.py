@@ -13,7 +13,6 @@ from werkzeug.utils import secure_filename
 from lib.config_manager import *
 from lib.job_manager import *
 from lib.app_utils import *
-from lib import ad_hoc_chat_manager
 
 app = Flask(__name__)
 current_result = Array('c', b'\0' * 32768)
@@ -143,23 +142,6 @@ def handle_model_not_found(e):
 def check_and_define_variable(var_name, default_value):
     if var_name not in globals():
         globals()[var_name] = default_value
-
-@app.route('/ad_hoc_chat', methods=['GET', 'POST'])
-def ad_hoc_chat():
-    global current_result
-
-    if request.method == 'POST':
-        prompt = request.form.get('prompt', '')
-        llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], False)
-        with current_result.get_lock():
-            current_result.value = b''  # Reset shared memory for each request
-        ad_hoc_chat_manager.run_batch(llm, prompt, current_result)
-        return redirect(url_for('ad_hoc_chat'))
-    else:
-        with current_result.get_lock():
-            result_value = current_result.value.decode('utf-8')
-        return render_template('ad_hoc_chat.html', result=result_value)
-
 
 @app.errorhandler(HTTPError)
 def handle_http_errors(e):
