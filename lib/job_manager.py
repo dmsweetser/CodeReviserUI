@@ -237,25 +237,48 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
         else:
             save_revision(revisions_db, filename, user_id, file_contents.decode())
 
-        url = f'{client_url}/process_request'
-        data = {
-            'prompt': prompt,
-            'fileName': filename,
-            'fileContents': file_contents
-        }
-
-        response = requests.post(url, data=data)
-
-        if response.status_code == 200:
-            revision = response.content.decode()
-            save_revision(revisions_db, filename, user_id, revision)
-            print(f"Job {job_data['job_id']} completed. Result: {revision}")
-            if rounds != -1:
-                update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+        if url.endswith("_OPENAI"):
+            url = client_url.replace("_OPENAI","")
+            headers = {
+            "Content-Type": "application/json"
+            }
+            data = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "mode": "instruct",
+                "instruction_template": "Alpaca"
+            }
+            response = requests.post(url, json=data, headers=headers)
+            if response.status_code == 200:
+                revision = response.json()['choices'][0]['message']['content']
+                save_revision(revisions_db, filename, user_id, revision)
+                print(f"Job {job_data['job_id']} completed. Result: {revision}")
+                if rounds != -1:
+                    update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+            else:
+                print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
+                update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
         else:
-            print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
-            update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
-
+            url = f'{client_url}/process_request'
+            data = {
+                'prompt': prompt,
+                'fileName': filename,
+                'fileContents': file_contents
+            }
+            response = requests.post(url, data=data)
+            if response.status_code == 200:
+                revision = response.content.decode()
+                save_revision(revisions_db, filename, user_id, revision)
+                print(f"Job {job_data['job_id']} completed. Result: {revision}")
+                if rounds != -1:
+                    update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+            else:
+                print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
+                update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
     except Exception as e:
         print(str(e))
         update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
