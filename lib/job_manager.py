@@ -237,7 +237,7 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
         else:
             save_revision(revisions_db, filename, user_id, file_contents.decode())
 
-        if url.endswith("_OPENAI"):
+        if client_url.endswith("_OPENAI"):
             url = client_url.replace("_OPENAI","")
             headers = {
             "Content-Type": "application/json"
