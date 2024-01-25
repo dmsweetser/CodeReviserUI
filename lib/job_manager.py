@@ -215,6 +215,7 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
         print("\n\n\n\n\n")
         filename = job_data['filename']
         file_contents = base64.b64decode(job_data['file_contents'])
+        rounds = job_data['rounds']
         user_id = job_data['user_id']
         prompt = job_data['prompt']
 
@@ -227,7 +228,7 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
             existing_revision = revisions[0]
             file_contents = existing_revision
         else:
-            save_revision(revisions_db, filename, user_id, file_contents)
+            save_revision(revisions_db, filename, user_id, file_contents.decode())
 
         url = f'{client_url}/process_request'
         data = {
@@ -242,7 +243,8 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
             revision = response.content.decode()
             save_revision(revisions_db, filename, user_id, revision)
             print(f"Job {job_data['job_id']} completed. Result: {revision}")
-            update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+            if rounds != -1:
+                update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
         else:
             print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
             update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
