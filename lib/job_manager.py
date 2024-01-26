@@ -260,7 +260,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             existing_revision = revisions[0]
             file_contents = existing_revision
         else:
-            save_revision(revisions_db, filename, user_id, file_contents.decode())
+            save_revision(revisions_db, filename, user_id, file_contents)
 
         if client_url.endswith("_OPENAI"):
 
