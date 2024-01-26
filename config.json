@@ -33,5 +33,5 @@
   "typical_p": 0.68,
   "tfs": 0.68,
   "loader": "llama.cpp",
-  "other_instances": "['sweetsers-linux:5031']"
+  "other_instances": "['sweetsers-linux:5031']" 
 }

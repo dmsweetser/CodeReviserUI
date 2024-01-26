@@ -265,29 +265,27 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         if client_url.endswith("_OPENAI"):
 
             print(f'Message length for OpenAI-Compatible API:{len(message)}')
-            if len(message) > 20000:
+            if len(message) > 24000:
                 client_queue.put(current_client)
                 return
 
-            url = client_url.replace("_OPENAI","/v1/chat/completions")
+            url = client_url.replace("_OPENAI","/v1/completions")
             headers = {
             "Content-Type": "application/json"
             }
             data = {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": message
-                    }
-                ],
-                "mode": "instruct"
+                "model": "Mistral-7B-Instruct-v0.2-GPTQ",
+                "prompt": message,
+                "max_tokens": 10000,
+                "temperature": get_config('temperature', ''),
+                "top_p": get_config('top_p', '')
             }
 
             response = requests.post(url, json=data, headers=headers)
             print(f'OpenAI response:\n\n{response}')
-            print(f'Generated code:\n{response['choices'][0]['message']['content']}')
+            print(f'Generated code:\n{response['choices'][0]['text']}')
             if response.status_code == 200:
-                revision = response['choices'][0]['message']['content']
+                revision = response['choices'][0]['text']
 
                 # Extract code from the revised markdown if enabled
                 revised_code = extract_code_from_markdown(revision) if extract_from_markdown else revision
