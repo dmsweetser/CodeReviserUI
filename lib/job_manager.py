@@ -264,7 +264,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
 
         if client_url.endswith("_OPENAI"):
 
-            if len(message) > 4000:
+            if len(message) > 16000:
                 client_queue.put(current_client)
                 return
 
