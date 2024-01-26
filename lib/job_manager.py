@@ -200,7 +200,6 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
 
                 try:
                     update_job_status(batch_requests_file, job_id, "STARTED")
-                    print("\n\n\n\n\n")
                     if rounds == -1:
                         llm = load_model(model_url, model_folder, model_filename, max_context, True)
                         generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
@@ -226,7 +225,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
 
     try:
         update_job_status(batch_requests_file, job_data['job_id'], "STARTED")
-        print("\n\n\n\n\n")
+        print(f"Processing {job_data['filename']} with client {current_client}")
         filename = job_data['filename']
         file_contents = base64.b64decode(job_data['file_contents'])
         if isinstance(file_contents, bytes):
@@ -264,7 +263,8 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
 
         if client_url.endswith("_OPENAI"):
 
-            if len(message) > 16000:
+            print(f'Message length for OpenAI-Compatible API:{len(message)}')
+            if len(message) > 20000:
                 client_queue.put(current_client)
                 return
 
@@ -281,6 +281,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
                 "repeat_penalty": get_config('repetition_penalty', 0.99),
             }
             response = requests.post(url, json=data, headers=headers)
+            print(f'OpenAI response:\n\n{response}')
             if response.status_code == 200:
                 revision = response.json()['choices'][0]['text']
                 save_revision(revisions_db, filename, user_id, revision)
