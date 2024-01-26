@@ -281,7 +281,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             }
             response = requests.post(url, json=data, headers=headers)
             if response.status_code == 200:
-                revision = response.json()['choices'][0]['message']['content']
+                revision = response.json()['choices'][0]['text']
                 save_revision(revisions_db, filename, user_id, revision)
                 print(f"Job {job_data['job_id']} completed. Result: {revision}")
                 if rounds != -1:
