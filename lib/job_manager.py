@@ -161,7 +161,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                 current_client = None
                 while True:
                     if client_queue.empty():
-                        time.sleep(60)
+                        time.sleep(10)
                     else:
                         current_client = client_queue.get()
                         break
@@ -264,7 +264,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
 
         if client_url.endswith("_OPENAI"):
 
-            if len(message) > 3000:
+            if len(message) > 4000:
                 client_queue.put(current_client)
                 return
 
@@ -274,6 +274,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             }
             data = {
                 "prompt": message,
+                "max_tokens": 8196,
                 "temperature": get_config('temperature', 1.0),
                 "top_p": get_config('top_p', 0.99),
                 "top_k": get_config('top_k', 85),
