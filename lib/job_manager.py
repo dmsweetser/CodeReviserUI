@@ -135,11 +135,15 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
     client_instances = get_config("other_instances","")
     client_instances = ast.literal_eval(client_instances)
 
+    client_queue = Queue()
+
     if len(client_instances) > 0:
+
+        for client in client_instances:
+            client_queue.put(client)
+
         while True:
             
-            processing_status_queue = Queue()
-
             with open(batch_requests_file, 'r') as json_file:
                 data = json.load(json_file)
 
@@ -149,21 +153,24 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                 break
 
             processes = []
-            clients = cycle(client_instances)
 
             for request_data in data:
                 filename = request_data['filename']
                 job_id = request_data['job_id']
 
-                # Wait until a client is available
-                while not processing_status_queue.empty():
-                    processing_status_queue.get()
-                    time.sleep(60)
+                current_client = None
+                while True:
+                    try:
+                        current_client = client_queue.get(block=False)
+                        if current_client is not None:
+                            break
+                        time.sleep(60)
+                    except client_queue.Empty:
+                        time.sleep(60)
 
-                current_client = next(clients)
                 client_url = f'http://{current_client}'
 
-                process = Process(target=process_job, args=(revisions_db, request_data, client_url, processing_status_queue))
+                process = Process(target=process_job, args=(revisions_db, request_data, client_url, client_queue, current_client))
                 processes.append(process)
                 process.start()
 
@@ -213,7 +220,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                     print(str(e))
                     update_job_status(batch_requests_file, job_id, "ERROR")
 
-def process_job(revisions_db, job_data, client_url, processing_status_queue):
+def process_job(revisions_db, job_data, client_url, client_queue, current_client):
 
     batch_requests_file = get_config("job_file", "")
 
@@ -283,4 +290,4 @@ def process_job(revisions_db, job_data, client_url, processing_status_queue):
         print(str(e))
         update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
 
-    processing_status_queue.put(True)
+    client_queue.put(current_client)
