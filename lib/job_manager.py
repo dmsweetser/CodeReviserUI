@@ -10,6 +10,7 @@ import gc
 from itertools import cycle
 import ast
 from threading import Lock
+from lib.revise_code import *
 
 def load_jobs():
     jobs = []
@@ -268,26 +269,38 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
                 client_queue.put(current_client)
                 return
 
-            url = client_url.replace("_OPENAI","/v1/completions")
+            url = client_url.replace("_OPENAI","/v1/chat/completions")
             headers = {
             "Content-Type": "application/json"
             }
             data = {
-                "prompt": message,
-                "max_tokens": 8196,
-                "temperature": get_config('temperature', 1.0),
-                "top_p": get_config('top_p', 0.99),
-                "top_k": get_config('top_k', 85),
-                "repeat_penalty": get_config('repetition_penalty', 0.99),
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ],
+                "mode": "instruct"
             }
+
             response = requests.post(url, json=data, headers=headers)
             print(f'OpenAI response:\n\n{response}')
+            print(f'Generated code:\n{response['choices'][0]['message']['content']}')
             if response.status_code == 200:
-                revision = response.json()['choices'][0]['text']
-                save_revision(revisions_db, filename, user_id, revision)
-                print(f"Job {job_data['job_id']} completed. Result: {revision}")
-                if rounds != -1:
-                    update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+                revision = response['choices'][0]['message']['content']
+
+                # Extract code from the revised markdown if enabled
+                revised_code = extract_code_from_markdown(revision) if extract_from_markdown else revision
+
+                if len(revised_code) < .3 * len(original_code):
+                    print("Generated code was too short")
+                    return original_code
+                else:
+                    save_revision(revisions_db, filename, user_id, revision)
+                    print(f"Job {job_data['job_id']} completed. Result: {revision}")
+                    if rounds != -1:
+                        update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+
             else:
                 print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
                 update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
