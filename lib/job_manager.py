@@ -160,13 +160,11 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
 
                 current_client = None
                 while True:
-                    try:
-                        current_client = client_queue.get(block=False)
-                        if current_client is not None:
-                            break
+                    if client_queue.empty():
                         time.sleep(60)
-                    except client_queue.Empty:
-                        time.sleep(60)
+                    else:
+                        current_client = client_queue.get()
+                        break
 
                 client_url = f'http://{current_client}'
 
@@ -188,7 +186,9 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
 
             for request_data in data:
                 filename = request_data['filename']
-                file_contents = base64.b64decode(request_data['file_contents'])
+                file_contents = base64.b64decode(job_data['file_contents'])
+                if isinstance(file_contents, bytes):
+                    file_contents = file_contents.decode('utf-8')
                 user_id = request_data['user_id']
                 rounds = request_data['rounds']
                 prompt = request_data['prompt']
@@ -229,9 +229,27 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         print("\n\n\n\n\n")
         filename = job_data['filename']
         file_contents = base64.b64decode(job_data['file_contents'])
+        if isinstance(file_contents, bytes):
+            file_contents = file_contents.decode('utf-8')
         rounds = job_data['rounds']
         user_id = job_data['user_id']
         prompt = job_data['prompt']
+
+        # Get default prompt from config or use a default value
+        default_prompt = get_config('default_prompt', "")
+        revision_prompt = get_config('revision_prompt', "") 
+
+        # Check if extracting from Markdown is enabled in config
+        extract_from_markdown = get_config('extract_from_markdown', True)
+
+        if "TODO" in file_contents.upper() or "PLACEHOLDER" in file_contents.upper():
+            # Use the provided prompt if given, else use the one from config
+            prompt = prompt if prompt else revision_prompt
+        else:
+            # Use the provided prompt if given, else use the one from config
+            prompt = prompt if prompt else default_prompt
+
+        message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{file_contents}\n```\n[/INST]\n"
 
         revisions = get_latest_revisions(filename, user_id, revisions_db)
 
@@ -245,19 +263,21 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             save_revision(revisions_db, filename, user_id, file_contents.decode())
 
         if client_url.endswith("_OPENAI"):
-            url = client_url.replace("_OPENAI","")
+
+            if len(message) > 3000:
+                client_queue.put(current_client)
+                return
+
+            url = client_url.replace("_OPENAI","/v1/completions")
             headers = {
             "Content-Type": "application/json"
             }
             data = {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "mode": "instruct",
-                "instruction_template": "Alpaca"
+                "prompt": message,
+                "temperature": get_config('temperature', 1.0),
+                "top_p": get_config('top_p', 0.99),
+                "top_k": get_config('top_k', 85),
+                "repeat_penalty": get_config('repetition_penalty', 0.99),
             }
             response = requests.post(url, json=data, headers=headers)
             if response.status_code == 200:
@@ -272,7 +292,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         else:
             url = f'{client_url}/process_request'
             data = {
-                'prompt': prompt,
+                'prompt': message,
                 'fileName': filename,
                 'fileContents': file_contents
             }
