@@ -262,47 +262,47 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         else:
             save_revision(revisions_db, filename, user_id, file_contents)
 
-        if client_url.endswith("_OPENAI"):
+        # if client_url.endswith("_OPENAI"):
 
-            print(f'Message length for OpenAI-Compatible API:{len(message)}')
-            if len(message) > 24000:
-                client_queue.put(current_client)
-                return
+        #     print(f'Message length for OpenAI-Compatible API:{len(message)}')
+        #     if len(message) > 24000:
+        #         client_queue.put(current_client)
+        #         return
 
-            url = client_url.replace("_OPENAI","/v1/completions")
-            headers = {
-            "Content-Type": "application/json"
-            }
-            data = {
-                "model": "Mistral-7B-Instruct-v0.2-GPTQ",
-                "prompt": message,
-                "max_tokens": 10000,
-                "temperature": get_config('temperature', ''),
-                "top_p": get_config('top_p', '')
-            }
+        #     url = client_url.replace("_OPENAI","/v1/completions")
+        #     headers = {
+        #     "Content-Type": "application/json"
+        #     }
+        #     data = {
+        #         "model": "Mistral-7B-Instruct-v0.2-GPTQ",
+        #         "prompt": message,
+        #         "max_tokens": 10000,
+        #         "temperature": get_config('temperature', ''),
+        #         "top_p": get_config('top_p', '')
+        #     }
 
-            response = requests.post(url, json=data, headers=headers)
-            print(f'OpenAI response:\n\n{response}')
-            print(f'Generated code:\n{response['choices'][0]['text']}')
-            if response.status_code == 200:
-                revision = response['choices'][0]['text']
+        #     response = requests.post(url, json=data, headers=headers)
+        #     print(f'OpenAI response:\n\n{response}')
+        #     print(f'Generated code:\n{response['choices'][0]['text']}')
+        #     if response.status_code == 200:
+        #         revision = response['choices'][0]['text']
 
-                # Extract code from the revised markdown if enabled
-                revised_code = extract_code_from_markdown(revision) if extract_from_markdown else revision
+        #         # Extract code from the revised markdown if enabled
+        #         revised_code = extract_code_from_markdown(revision) if extract_from_markdown else revision
 
-                if len(revised_code) < .3 * len(original_code):
-                    print("Generated code was too short")
-                    return original_code
-                else:
-                    save_revision(revisions_db, filename, user_id, revision)
-                    print(f"Job {job_data['job_id']} completed. Result: {revision}")
-                    if rounds != -1:
-                        update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+        #         if len(revised_code) < .3 * len(original_code):
+        #             print("Generated code was too short")
+        #             return original_code
+        #         else:
+        #             save_revision(revisions_db, filename, user_id, revision)
+        #             print(f"Job {job_data['job_id']} completed. Result: {revision}")
+        #             if rounds != -1:
+        #                 update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
 
-            else:
-                print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
-                update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
-        else:
+        #     else:
+        #         print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
+        #         update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
+        # else:
             url = f'{client_url}/process_request'
             data = {
                 'prompt': message,
