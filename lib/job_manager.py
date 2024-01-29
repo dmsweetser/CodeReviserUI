@@ -199,6 +199,9 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                 if status == "FINISHED":
                     continue
 
+                if status == "STARTED":
+                    continue
+
                 try:
                     update_job_status(batch_requests_file, job_id, "STARTED")
                     if rounds == -1:
@@ -207,6 +210,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
                         del llm
                         gc.collect()
                         time.sleep(10)
+                        update_job_status(batch_requests_file, job_id, "NEW")
                     else:
                         for current_round in range(1, rounds + 1):
                             llm = load_model(model_url, model_folder, model_filename, max_context, True)
