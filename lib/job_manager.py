@@ -221,7 +221,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         else:
             save_revision(revisions_db, filename, user_id, file_contents)
         
-        update_job_status(batch_requests_file, job_data['job_id'], "STARTED", True)
+        update_job_status(batch_requests_file, job_data['job_id'], "STARTED", clear_file_contents=True)
 
         url = f'{client_url}/process_request'
         data = {
@@ -237,7 +237,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             if rounds != -1:
                 update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
             else:
-                update_job_status(batch_requests_file, job_id, "NEW")
+                update_job_status(batch_requests_file, job_data['job_id'], "NEW")
         else:
             print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
             update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
