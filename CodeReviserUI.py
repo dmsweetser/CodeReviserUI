@@ -21,14 +21,14 @@ current_result = Array('c', b'\0' * 32768)
 config = load_config()
 
 # Set defaults if not present in the config
-app.secret_key = get_config('secret_key', 'your_secret_key')
-app.config['MODEL_FOLDER'] = get_config('model_folder', 'models/')
-app.config['REVISIONS_DB'] = get_config('revisions_db', 'revisions.db')
-app.config['MODEL_URL'] = get_config('model_url', "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_S.gguf")
-app.config['MODEL_FILENAME'] = get_config('model', "mistral-7b-instruct-v0.2.Q5_K_S.gguf")
+app.secret_key = get_config('secret_key', '')
+app.config['MODEL_FOLDER'] = get_config('model_folder', '')
+app.config['REVISIONS_DB'] = get_config('revisions_db', '')
+app.config['MODEL_URL'] = get_config('model_url', "")
+app.config['MODEL_FILENAME'] = get_config('model', "")
 app.config['MAX_CONTEXT'] = get_config('n_ctx', 32768)
 app.config['REVISIONS_PER_PAGE'] = get_config('revisions_per_page', 10)
-app.config['SESSION_TYPE'] = get_config('session_type', 'filesystem')
+app.config['SESSION_TYPE'] = get_config('session_type', '')
 app.config['MAX_FILE_SIZE'] = get_config('max_file_size', 10 * 1024 * 1024)
 
 class User(UserMixin):

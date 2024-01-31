@@ -17,7 +17,7 @@ def load_jobs():
 
     try:
         config = load_config()
-        job_file = get_config("job_file", "jobs.json")
+        job_file = get_config("job_file", "")
 
         with open(job_file, 'r') as json_file:
             data = json.load(json_file)
@@ -45,7 +45,7 @@ def load_jobs():
 # Create a lock
 update_job_status_lock = Lock()
 
-def update_job_status(job_file, job_id, status, rounds=None):
+def update_job_status(job_file, job_id, status, rounds=None, clear_file_contents=False):
     with update_job_status_lock:
         existing_contents = []
         if os.path.exists(job_file):
@@ -57,6 +57,8 @@ def update_job_status(job_file, job_id, status, rounds=None):
                 job['status'] = status
                 if rounds is not None:
                     job['rounds'] = rounds
+                if clear_file_contents is True:
+                    job['file_contents'] = None
                 break
 
         with open(job_file, 'w') as json_file:
@@ -65,7 +67,7 @@ def update_job_status(job_file, job_id, status, rounds=None):
 def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context):
 
     config = load_config()
-    job_file = get_config("job_file", "jobs.json")
+    job_file = get_config("job_file", "")
 
     batch_process = Process(target=process_batch, args=(job_file, revisions_db, model_folder, model_url, model_filename, max_context))
     batch_process.start()
@@ -81,7 +83,7 @@ def add_job(max_file_size, filename, file_contents, model_folder, revisions_db, 
     user_id = current_user.id
 
     config = load_config()
-    job_file = get_config("job_file", "jobs.json")
+    job_file = get_config("job_file", "")
 
     save_request_to_json(job_file, filename, file_contents, user_id, rounds, prompt)
 
@@ -114,7 +116,7 @@ def save_request_to_json(batch_requests_file, filename, file_contents, user_id, 
 
 def clear_job(job_id):
     config = load_config()
-    batch_requests_file = get_config("job_file", "jobs.json")
+    batch_requests_file = get_config("job_file", "")
 
     # Clear a specific job based on job_id
     existing_contents = []
@@ -133,103 +135,56 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
     config = load_config()
     batch_requests_file = get_config("job_file", "")
 
-    client_instances = get_config("other_instances","")
+    client_instances = get_config("host_instances","")
     client_instances = ast.literal_eval(client_instances)
 
     client_queue = Queue()
 
-    if len(client_instances) > 0:
-
-        for client in client_instances:
+    for client in client_instances:
             client_queue.put(client)
 
-        while True:
-            
-            with open(batch_requests_file, 'r') as json_file:
-                data = json.load(json_file)
+    while True:       
 
-            all_finished = all(request_data['status'] == "FINISHED" for request_data in data)
+        with open(batch_requests_file, 'r') as json_file:
+            data = json.load(json_file)
 
-            if all_finished:
-                break
+        all_finished = all(request_data['status'] == "FINISHED" for request_data in data)
 
-            processes = []
+        if all_finished:
+            break
 
-            for request_data in data:
-                filename = request_data['filename']
-                job_id = request_data['job_id']
+        processes = []
 
-                current_client = None
-                while True:
-                    if client_queue.empty():
-                        time.sleep(10)
-                    else:
-                        current_client = client_queue.get()
-                        break
+        for request_data in data:
+            filename = request_data['filename']
+            job_id = request_data['job_id']
+            status = request_data['status']
 
-                client_url = f'http://{current_client}'
+            if status == "STARTED":
+                continue
 
-                process = Process(target=process_job, args=(revisions_db, request_data, client_url, client_queue, current_client))
-                processes.append(process)
-                process.start()
+            current_client = None
+            while True:
+                if client_queue.empty():
+                    time.sleep(10)
+                else:
+                    current_client = client_queue.get()
+                    break
 
-            for process in processes:
-                process.join()
-    else:
-        while True:
-            with open(batch_requests_file, 'r') as json_file:
-                data = json.load(json_file)
+            client_url = f'http://{current_client}'
 
-            all_finished = all(request_data['status'] == "FINISHED" for request_data in data)
+            process = Process(target=process_job, args=(revisions_db, request_data, client_url, client_queue, current_client))
+            processes.append(process)
+            process.start()
 
-            if all_finished:
-                break
-
-            for request_data in data:
-                filename = request_data['filename']
-                file_contents = base64.b64decode(job_data['file_contents'])
-                if isinstance(file_contents, bytes):
-                    file_contents = file_contents.decode('utf-8')
-                user_id = request_data['user_id']
-                rounds = request_data['rounds']
-                prompt = request_data['prompt']
-                status = request_data['status']
-                job_id = request_data['job_id']
-
-                if status == "FINISHED":
-                    continue
-
-                if status == "STARTED":
-                    continue
-
-                try:
-                    update_job_status(batch_requests_file, job_id, "STARTED")
-                    if rounds == -1:
-                        llm = load_model(model_url, model_folder, model_filename, max_context, True)
-                        generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
-                        del llm
-                        gc.collect()
-                        time.sleep(10)
-                        update_job_status(batch_requests_file, job_id, "NEW")
-                    else:
-                        for current_round in range(1, rounds + 1):
-                            llm = load_model(model_url, model_folder, model_filename, max_context, True)
-                            generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt)
-                            update_job_status(batch_requests_file, job_id, "STARTED", rounds - current_round)
-                            del llm
-                            gc.collect()
-                            time.sleep(10)
-                        update_job_status(batch_requests_file, job_id, "FINISHED")
-                except Exception as e:
-                    print(str(e))
-                    update_job_status(batch_requests_file, job_id, "ERROR")
+        for process in processes:
+            process.join()
 
 def process_job(revisions_db, job_data, client_url, client_queue, current_client):
 
     batch_requests_file = get_config("job_file", "")
 
     try:
-        update_job_status(batch_requests_file, job_data['job_id'], "STARTED")
         print(f"Processing {job_data['filename']} with client {current_client}")
         filename = job_data['filename']
         file_contents = base64.b64decode(job_data['file_contents'])
@@ -265,6 +220,8 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             file_contents = existing_revision
         else:
             save_revision(revisions_db, filename, user_id, file_contents)
+        
+        update_job_status(batch_requests_file, job_data['job_id'], "STARTED", True)
 
         url = f'{client_url}/process_request'
         data = {
@@ -279,6 +236,8 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             print(f"Job {job_data['job_id']} completed. Result: {revision}")
             if rounds != -1:
                 update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
+            else:
+                update_job_status(batch_requests_file, job_id, "NEW")
         else:
             print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
             update_job_status(batch_requests_file, job_data['job_id'], "ERROR")

@@ -29,28 +29,6 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
 
-def generate_code_revision(revisions_db, filename, file_contents, user_id, llm, prompt):
-    """Revise the given file using the LLM model and save it in the SQLite database."""
-    
-    print(f"\n\n\nGenerating code revision for {filename}\n\n\n")
-
-    code = file_contents.decode('utf-8')
-
-    revisions = get_latest_revisions(filename, user_id, revisions_db)
-
-    if revisions and len(revisions) == 2:
-        existing_revision, prior_revision = revisions
-        revision = revise_code.run(existing_revision, llm, prompt)
-        save_revision(revisions_db, filename, user_id, revision)
-    elif revisions and len(revisions) == 1:
-        existing_revision = revisions[0]
-        revision = revise_code.run(existing_revision, llm, prompt)
-        save_revision(revisions_db, filename, user_id, revision)
-    else:
-        save_revision(revisions_db, filename, user_id, code)
-        revision = revise_code.run(code, None, llm, prompt)
-        save_revision(revisions_db, filename, user_id, revision)
-
 def get_latest_revisions(filename, user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()
