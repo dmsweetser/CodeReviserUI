@@ -187,7 +187,10 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
     try:
         print(f"Processing {job_data['filename']} with client {current_client}")
         filename = job_data['filename']
-        file_contents = base64.b64decode(job_data['file_contents'])
+        if job_data['file_contents'] is None:
+            file_contents = ''
+        else:
+            file_contents = base64.b64decode(job_data['file_contents'])
         if isinstance(file_contents, bytes):
             file_contents = file_contents.decode('utf-8')
         rounds = job_data['rounds']
