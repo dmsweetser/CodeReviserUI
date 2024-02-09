@@ -10,13 +10,13 @@
   "session_type": "filesystem",
   "max_file_size": 10485760,
   "job_file": "jobs.json",
-  "model": "mistral-7b-instruct-v0.2.Q4_K_M.gguf",
+  "model": "mixtral-8x7b-instruct-v0.1.Q2_K.gguf",
   "n_ctx": 32768,
   "max_tokens": 32768,
   "n_batch": 32, 
   "cpu": true,
   "threads": 0,
-  "threads_batch": 4,
+  "threads_batch": 0,
   "no_mmap": true,
   "mlock": true,
   "no_mul_mat_q": false,
@@ -33,5 +33,5 @@
   "typical_p": 0.68,
   "tfs": 0.68,
   "loader": "llama.cpp",
-  "host_instances": "['slugsley1:5031','sweetsers-linux:5031']" 
+  "host_instances": "['127.0.0.1:5031']" 
 }
