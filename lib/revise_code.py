@@ -21,11 +21,8 @@ def run(original_code, llama_model, prompt):
         prompt = prompt if prompt else default_prompt
 
     message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\n[/INST]\n"
-
-    messages = [{"role": "user", "content": message}]
-    
-    response = llama_model.create_chat_completion(
-        messages=messages,
+    response = llama_model.create_completion(
+        message,
         temperature=get_config("temperature",""),
         top_p=get_config("top_p",""),
         top_k=get_config("top_k",""),
@@ -34,7 +31,7 @@ def run(original_code, llama_model, prompt):
         max_tokens=get_config("max_tokens","")
         )
 
-    revised_markdown = response['choices'][0]['message']['content']
+    revised_markdown = response['choices'][0]['text']
 
     # Extract code from the revised markdown if enabled
     revised_code = extract_code_from_markdown(revised_markdown) if extract_from_markdown else revised_markdown

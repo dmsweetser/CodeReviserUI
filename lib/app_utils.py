@@ -65,6 +65,7 @@ def load_model(model_url, model_folder, model_filename, max_context):
         "use_mmap": False,
         "use_mlock": False,
         "n_gpu_layers": 36,
+        "main_gpu": 0,
         "tensor_split": "",
         "n_ctx": max_context,
         "rope_freq_base": 0,
