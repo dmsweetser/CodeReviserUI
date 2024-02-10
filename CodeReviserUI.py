@@ -140,4 +140,4 @@ def handle_http_errors(e):
     abort(500, description="Failed to download model.")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0",port="5031")
+    app.run(host=get_config("host",""),port=get_config("port",""))

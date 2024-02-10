@@ -1,4 +1,6 @@
 {
+  "host": "0.0.0.0",
+  "port": "5031",
   "secret_key": "your_secret_key",
   "model_folder": "models/",
   "revisions_db": "revisions.db",
