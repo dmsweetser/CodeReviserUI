@@ -1,11 +1,7 @@
 from flask import Flask, render_template, request, send_file, abort, jsonify, redirect, url_for
-import os
-import sqlite3
-import tempfile
-import uuid
-import requests
-from flask_login import LoginManager, UserMixin, current_user
-from multiprocessing import Process, Value, Array
+import gc
+from flask_login import UserMixin, current_user
+from multiprocessing import Array
 from urllib.error import HTTPError
 from urllib.parse import quote_plus, unquote_plus
 from werkzeug.utils import secure_filename
@@ -13,6 +9,7 @@ from werkzeug.utils import secure_filename
 from lib.config_manager import *
 from lib.job_manager import *
 from lib.app_utils import *
+from lib import revise_code
 
 app = Flask(__name__)
 current_result = Array('c', b'\0' * 32768)
@@ -26,10 +23,10 @@ app.config['MODEL_FOLDER'] = get_config('model_folder', '')
 app.config['REVISIONS_DB'] = get_config('revisions_db', '')
 app.config['MODEL_URL'] = get_config('model_url', "")
 app.config['MODEL_FILENAME'] = get_config('model', "")
-app.config['MAX_CONTEXT'] = get_config('n_ctx', 32768)
-app.config['REVISIONS_PER_PAGE'] = get_config('revisions_per_page', 10)
+app.config['MAX_CONTEXT'] = get_config('n_ctx', "")
+app.config['REVISIONS_PER_PAGE'] = get_config('revisions_per_page', "")
 app.config['SESSION_TYPE'] = get_config('session_type', '')
-app.config['MAX_FILE_SIZE'] = get_config('max_file_size', 10 * 1024 * 1024)
+app.config['MAX_FILE_SIZE'] = get_config('max_file_size', "")
 
 class User(UserMixin):
     def __init__(self, id, username):
@@ -65,18 +62,13 @@ def queue():
     add_job(app.config['MAX_FILE_SIZE'], filename, file_contents, app.config['MODEL_FOLDER'], app.config['REVISIONS_DB'], current_user, rounds, prompt)
     return redirect(url_for('index'))
 
-@app.route('/processing_request', methods=['GET'])
-def get_processing_status():
-    return jsonify({'busy': processing_request})
-
 @app.route('/process_request', methods=['POST'])
 def process_request():
 
     prompt = request.form.get('prompt', '')
-    filename = request.form.get('fileName', '')
     file_contents = request.form.get('fileContents', '')
 
-    llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], True)
+    llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     revision = revise_code.run(file_contents, llm, prompt)
 
     del llm

@@ -1,17 +1,11 @@
-import os
 import re
-import math
-from llama_cpp import Llama
-from lib.config_manager import load_config, get_config, update_config
+from lib.config_manager import get_config
 
 def extract_code_from_markdown(markdown):
     code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
     return code_blocks[0].strip() if code_blocks else markdown.strip()
 
 def run(original_code, llama_model, prompt):
-    # Load configuration from config.json
-    config = load_config()
-
     # Get default prompt from config or use a default value
     default_prompt = get_config('default_prompt', "")
     revision_prompt = get_config('revision_prompt', "") 
@@ -30,7 +24,15 @@ def run(original_code, llama_model, prompt):
 
     messages = [{"role": "user", "content": message}]
     
-    response = llama_model.create_chat_completion(messages=messages)
+    response = llama_model.create_chat_completion(
+        messages=messages,
+        temperature=get_config("temperature",""),
+        top_p=get_config("top_p",""),
+        top_k=get_config("top_k",""),
+        repeat_penalty=get_config("repeat_penalty",""),
+        typical_p=get_config("typical_p",""),
+        max_tokens=get_config("max_tokens","")
+        )
 
     revised_markdown = response['choices'][0]['message']['content']
 

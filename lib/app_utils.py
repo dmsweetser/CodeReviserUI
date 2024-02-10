@@ -2,20 +2,15 @@ import os
 import sqlite3
 import requests
 import tempfile
-import uuid
 from flask import abort
-from multiprocessing import Process
 
 import difflib
 from markupsafe import escape
 
 from llama_cpp import Llama
-import json
-import base64
 
 from lib.config_manager import *
 from lib.job_manager import *
-from lib import revise_code
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -49,7 +44,7 @@ def save_revision(revisions_db, filename, user_id, revision):
     conn.commit()
     conn.close()
 
-def load_model(model_url, model_folder, model_filename, max_context, use_gpu):
+def load_model(model_url, model_folder, model_filename, max_context):
 
     model_path = model_folder + model_filename
 
@@ -62,49 +57,30 @@ def load_model(model_url, model_folder, model_filename, max_context, use_gpu):
             print("Failed to download or save the model:", str(e))
             return None
 
-    # Load configuration from config.json
-    config = load_config()
-
     # Define default llama.cpp parameters
     default_llama_params = {
-        "loader": "llama.cpp",
-        "cpu": False,
-        "threads": 0,
-        "threads_batch": 0,
+        "n_threads": 0,
+        "n_threads_batch": 0,
         "n_batch": 512,
-        "no_mmap": False,
-        "mlock": False,
-        "no_mul_mat_q": False,
-        "n_gpu_layers": 0,
+        "use_mmap": False,
+        "use_mlock": False,
+        "n_gpu_layers": 36,
         "tensor_split": "",
         "n_ctx": max_context,
-        "compress_pos_emb": 1,
-        "alpha_value": 1,
         "rope_freq_base": 0,
         "numa": False,
-        "model": model_filename,
-        "temperature": 1.0,
-        "top_p": 0.99,
-        "top_k": 85,
-        "repetition_penalty": 1.01,
-        "typical_p": 0.68,
-        "tfs": 0.68,
-        "max_tokens": max_context
+        "max_tokens": max_context,
+        "verbose": True
     }
 
     # Update llama_params with values from config or use defaults
     llama_params = {key: get_config(key, default_value) for key, default_value in default_llama_params.items()}
-
-    if use_gpu == False:
-        llama_params["n_gpu_layers"] = 0
 
     try:
         return Llama(model_path, **llama_params)
     except Exception as e:
         print("Failed to create Llama object:", str(e))
         return None
-
-
 
 # Helper function to connect to the revisions database
 def connect_db(revisions_db):
@@ -127,8 +103,6 @@ def get_prior_revision(user_id, revisions_db, filename, revision_id1):
     revision = c.fetchone()[0]
     conn.close()
     return revision
-
-
 
 # Helper function to download a specific revision
 def download_revision_file(revisions_db, filename, revision_id, user_id):

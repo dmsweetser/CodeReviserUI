@@ -6,8 +6,6 @@ from multiprocessing import Process, Queue
 from flask import abort
 from lib.config_manager import load_config, get_config
 from lib.app_utils import *
-import gc
-from itertools import cycle
 import ast
 from threading import Lock
 from lib.revise_code import *
@@ -16,7 +14,6 @@ def load_jobs():
     jobs = []
 
     try:
-        config = load_config()
         job_file = get_config("job_file", "")
 
         with open(job_file, 'r') as json_file:
@@ -66,7 +63,6 @@ def update_job_status(job_file, job_id, status, rounds=None, clear_file_contents
 
 def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context):
 
-    config = load_config()
     job_file = get_config("job_file", "")
 
     batch_process = Process(target=process_batch, args=(job_file, revisions_db, model_folder, model_url, model_filename, max_context))
@@ -82,7 +78,6 @@ def add_job(max_file_size, filename, file_contents, model_folder, revisions_db, 
 
     user_id = current_user.id
 
-    config = load_config()
     job_file = get_config("job_file", "")
 
     save_request_to_json(job_file, filename, file_contents, user_id, rounds, prompt)
@@ -115,7 +110,6 @@ def save_request_to_json(batch_requests_file, filename, file_contents, user_id, 
         json.dump(existing_contents, json_file, indent=2)
 
 def clear_job(job_id):
-    config = load_config()
     batch_requests_file = get_config("job_file", "")
 
     # Clear a specific job based on job_id
@@ -156,8 +150,7 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
         processes = []
 
         for request_data in data:
-            filename = request_data['filename']
-            job_id = request_data['job_id']
+
             status = request_data['status']
 
             if status == "STARTED":
