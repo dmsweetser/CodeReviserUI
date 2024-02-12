@@ -140,4 +140,13 @@ def handle_http_errors(e):
     abort(500, description="Failed to download model.")
 
 if __name__ == '__main__':
-    app.run(host=get_config("host",""),port=get_config("port",""))
+    
+    port_number = get_config("port","")
+    process_name, process_pid = find_process_by_port(port_number)
+
+    if process_name and process_pid:
+        print(f"App cannot start: Port {port_number} is being used by process '{process_name}' (PID: {process_pid})")
+    else:
+        app.run(host=get_config("host",""),port=get_config("port",""))
+
+    

@@ -2,3 +2,4 @@ requests
 Flask
 Flask-Login
 markupsafe
+psutil
