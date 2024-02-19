@@ -106,9 +106,11 @@ class Linter:
 
         return warnings, errors
 
-    def extract_errors(self, code):
-        lint_results = self.lint(code)
-        return self.extract_errors_from_lint_results(lint_results)
+    def extract_errors(self, code, language):
+        lint_results = self.lint(code, language)
+        errors = self.extract_errors_from_lint_results(lint_results)
+        error_string = "\n".join([f"Error at line {line}, column {column}: {error}" for line, column, error in errors])
+        return error_string
 
     def extract_errors_from_lint_results(self, lint_results):
         if self.language == "python":

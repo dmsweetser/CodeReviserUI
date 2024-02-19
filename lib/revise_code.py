@@ -23,7 +23,7 @@ def run(original_code, llama_model, initial_prompt):
 
     linter = Linter()
     # TODO figure out how to pass the language
-    current_errors = linter.lint(original_code, "csharp")
+    current_errors = linter.extract_errors(original_code, "csharp")
 
     print(current_errors)
 

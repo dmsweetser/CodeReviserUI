@@ -210,6 +210,10 @@
                                     <a href="{{ url_for('clear_batch_job', job_id=job.job_id) }}"
                                         class="text-danger mt-2 ml-0">Clear Job From Batch</a>
                                 </div>
+                                <div style="float: right">
+                                    <a href="{{ url_for('reset_batch_job_status', job_id=job.job_id) }}"
+                                        class="text-danger mt-2 ml-0">Reset Status</a>
+                                </div>
                             </li>
                             {% endfor %}
                         </ul>

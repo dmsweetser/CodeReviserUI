@@ -87,6 +87,11 @@ def clear_batch_job(job_id):
     clear_job(job_id)
     return redirect(url_for('index'))
 
+@app.route('/reset_batch_job_status/<int:job_id>', methods=['GET'])
+def reset_batch_job_status(job_id):
+    # TODO implement this
+    return redirect(url_for('index'))
+
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
 def edit_revision(filename, revision_id):
     if request.method == 'GET':
