@@ -12,20 +12,9 @@ class Linter:
         self.python_lint = lint.PyLinter()
         self.python_extractor = self.extract_python_errors
 
-    language_map = {
-        "csharp": ["namespace", "void"],
-        "javascript": ["function", "let"],
-        "python": ["import", "def", "elif"]
-        }
+    def lint(self, code, language):
 
-    def detect_language(code):
-        for lang, keywords in language_map.items():
-            for keyword in keywords:
-                if keyword in code.split():
-                    return lang
-
-    def lint(self, code):
-        self.language = self.detect_language(code)
+        self.language = language
 
         if self.language == "python":
             ast = rope.base.ast.parse(code)
@@ -67,7 +56,7 @@ class Linter:
         with tempfile.TemporaryDirectory() as temp_dir:
             cs_file_path = os.path.join(temp_dir, "yourfile.cs")
             with open(cs_file_path, "w") as file:
-                file.write(cs_code)
+                file.write(code)
 
             try:
                 process = subprocess.Popen(
@@ -94,7 +83,7 @@ class Linter:
                 )
                 stdout, stderr = process.communicate()
 
-                warnings, errors = parse_output(stdout.decode("utf-8"), stderr.decode("utf-8"))
+                warnings, errors = self.parse_output(stdout.decode("utf-8"), stderr.decode("utf-8"))
 
                 return warnings, errors
             finally:

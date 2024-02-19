@@ -6,7 +6,7 @@ def extract_code_from_markdown(markdown):
     code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
     return code_blocks[0].strip() if code_blocks else markdown.strip()
 
-def run(original_code, llama_model, prompt):
+def run(original_code, llama_model, initial_prompt):
     # Get default prompt from config or use a default value
     default_prompt = get_config('default_prompt', "")
     revision_prompt = get_config('revision_prompt', "") 
@@ -16,20 +16,19 @@ def run(original_code, llama_model, prompt):
 
     if "TODO" in original_code.upper() or "PLACEHOLDER" in original_code.upper():
         # Use the provided prompt if given, else use the one from config
-        prompt = prompt if prompt else revision_prompt
+        prompt = revision_prompt
     else:
         # Use the provided prompt if given, else use the one from config
-        prompt = prompt if prompt else default_prompt
+        prompt = default_prompt
 
     linter = Linter()
-    current_errors = linter.lint(original_code)
+    # TODO figure out how to pass the language
+    current_errors = linter.lint(original_code, "csharp")
 
     print(current_errors)
 
-    match = re.search(r"\[ORIG\]((.*)\[/ORIG\])", text)
-    if match:
-        original_instruction = match.group(1)
-        message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{original_instruction}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+    if initial_prompt != "":
+        message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
     else:
         message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
 
