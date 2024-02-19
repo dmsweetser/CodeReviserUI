@@ -1,5 +1,6 @@
 import re
 from lib.config_manager import get_config
+from lib.linter import Linter
 
 def extract_code_from_markdown(markdown):
     code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
@@ -20,7 +21,18 @@ def run(original_code, llama_model, prompt):
         # Use the provided prompt if given, else use the one from config
         prompt = prompt if prompt else default_prompt
 
-    message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\n[/INST]\n"
+    linter = Linter()
+    current_errors = linter.lint(original_code)
+
+    print(current_errors)
+
+    match = re.search(r"\[ORIG\]((.*)\[/ORIG\])", text)
+    if match:
+        original_instruction = match.group(1)
+        message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{original_instruction}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+    else:
+        message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+
     response = llama_model.create_completion(
         message,
         temperature=get_config("temperature",""),

@@ -3,3 +3,7 @@ Flask
 Flask-Login
 markupsafe
 psutil
+pylint 
+rope
+esprima
+clr
