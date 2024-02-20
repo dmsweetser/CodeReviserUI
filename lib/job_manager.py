@@ -191,6 +191,16 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         user_id = job_data['user_id']
         initial_prompt = job_data['prompt']
 
+        revisions = get_latest_revisions(filename, user_id, revisions_db)
+        if revisions and len(revisions) == 2:
+            existing_revision, prior_revision = revisions
+            file_contents = existing_revision
+        elif revisions and len(revisions) == 1:
+            existing_revision = revisions[0]
+            file_contents = existing_revision
+        else:
+            save_revision(revisions_db, filename, user_id, file_contents)
+
         # Get default prompt from config or use a default value
         default_prompt = get_config('default_prompt', "")
         revision_prompt = get_config('revision_prompt', "") 
@@ -211,17 +221,6 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             language = "csharp"
         linter = Linter(file_contents, language)
         current_errors = linter.lint()
-
-        revisions = get_latest_revisions(filename, user_id, revisions_db)
-
-        if revisions and len(revisions) == 2:
-            existing_revision, prior_revision = revisions
-            file_contents = existing_revision
-        elif revisions and len(revisions) == 1:
-            existing_revision = revisions[0]
-            file_contents = existing_revision
-        else:
-            save_revision(revisions_db, filename, user_id, file_contents)
 
         if initial_prompt != "":
             message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
