@@ -207,9 +207,9 @@
                                 <th>#</th>
                                 <th>Filename</th>
                                 <th>Status</th>
-                                <th>Remaining Rounds</th>
+                                <th style="width:10%;">Remaining Rounds</th>
                                 <th>Initial Instruction</th>
-                                <th>Actions</th>
+                                <th style="width:15%;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,6 +226,7 @@
                                         data-bs-target="#clearJobModal-{{ job.job_id }}">
                                         Clear Job From Batch
                                     </button>
+                                    <br/>
                                     <button type="button" class="btn btn-link text-danger" data-bs-toggle="modal"
                                         data-bs-target="#resetJobModal-{{ job.job_id }}">
                                         Reset Status
