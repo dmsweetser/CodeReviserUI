@@ -31,12 +31,12 @@ def run(original_code, llama_model, initial_prompt):
     linter = Linter(original_code, language)
     current_errors = linter.lint()
 
-    print(current_errors)
-
     if initial_prompt != "":
         message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
     else:
         message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+
+    print(f"[LATEST MESSAGE]\n\n\n\n\n\n{message}\n\n\n\n\n\n")
 
     response = llama_model.create_completion(
         message,
