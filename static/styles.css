@@ -1,3 +1,7 @@
 /* * {
     outline: 2px solid green;
 } */
+
+.container {
+    width: 95% !important;
+}
