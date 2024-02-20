@@ -114,10 +114,6 @@ def get_prior_revision(user_id, revisions_db, filename, revision_id1):
 
 # Helper function to download a specific revision
 def download_revision_file(revisions_db, filename, revision_id, user_id):
-    print(revisions_db)
-    print(filename)
-    print(revision_id)
-    print(user_id)
     conn = connect_db(revisions_db)
     c = conn.cursor()
     c.execute("SELECT revision FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))

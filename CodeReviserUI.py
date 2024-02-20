@@ -48,7 +48,6 @@ def index():
 def queue():
     rounds = int(request.form.get('rounds', 1))
     prompt = request.form.get('prompt', '')
-    print(prompt)
     if 'file' in request.files and request.files['file'].filename != '':
         # File Upload Scenario
         file = request.files['file']
@@ -74,7 +73,6 @@ def process_request():
     del llm
     gc.collect()
     time.sleep(10)
-    print(revision)
     return revision
 
 @app.route('/start-batch', methods=['GET'])

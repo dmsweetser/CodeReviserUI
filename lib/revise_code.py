@@ -11,8 +11,6 @@ def run(original_code, llama_model, prompt):
     # Check if extracting from Markdown is enabled in config
     extract_from_markdown = get_config('extract_from_markdown', True)
 
-    print(f"[LATEST MESSAGE]\n\n\n\n\n\n{prompt}\n\n\n\n\n\n")
-
     response = llama_model.create_completion(
         prompt,
         temperature=get_config("temperature",""),
