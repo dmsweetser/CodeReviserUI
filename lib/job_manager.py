@@ -9,6 +9,7 @@ from lib.app_utils import *
 import ast
 from threading import Lock
 from lib.revise_code import *
+from lib.linter import Linter
 
 def load_jobs():
     jobs = []
@@ -188,23 +189,34 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             file_contents = file_contents.decode('utf-8')
         rounds = job_data['rounds']
         user_id = job_data['user_id']
-        prompt = job_data['prompt']
+        initial_prompt = job_data['prompt']
 
         # Get default prompt from config or use a default value
         default_prompt = get_config('default_prompt', "")
         revision_prompt = get_config('revision_prompt', "") 
 
-        # Check if extracting from Markdown is enabled in config
-        extract_from_markdown = get_config('extract_from_markdown', True)
-
         if "TODO" in file_contents.upper() or "PLACEHOLDER" in file_contents.upper():
             # Use the provided prompt if given, else use the one from config
-            prompt = prompt if prompt else revision_prompt
+            prompt = revision_prompt
         else:
             # Use the provided prompt if given, else use the one from config
-            prompt = prompt if prompt else default_prompt
+            prompt = default_prompt
 
-        message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{file_contents}\n```\n[/INST]\n"
+        language = ""
+        if "python" in initial_prompt.lower():
+            language = "python"
+        elif "javascript" in initial_prompt.lower():
+            language = "javascript"
+        elif "c#" in initial_prompt.lower():
+            language = "csharp"
+        linter = Linter(file_contents, language)
+        current_errors = linter.lint()
+
+        if initial_prompt != "":
+            message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+        else:
+            message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{original_code}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+
 
         revisions = get_latest_revisions(filename, user_id, revisions_db)
 
