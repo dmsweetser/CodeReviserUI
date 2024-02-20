@@ -1,145 +1,83 @@
-from pylint import lint
-import rope
-import esprima
+import pyjsparser
+import ast
+import io
+import sys
 import subprocess
-import json
-import os
 import tempfile
-import shutil
+import os
 
 class Linter:
-    def __init__(self):
-        self.python_lint = lint.PyLinter()
-        self.python_extractor = self.extract_python_errors
-
-    def lint(self, code, language):
-
+    def __init__(self, code, language):
+        self.code = code
         self.language = language
 
+    def lint(self):
         if self.language == "python":
-            ast = rope.base.ast.parse(code)
-            self.python_lint.load_default_plugins()
-            self.python_lint.check(ast)
-            return self.python_lint.reporter.messages
-
+            return self._lint_python()
         elif self.language == "javascript":
-            return self.run_eslint(code)
-
+            return self._lint_javascript()
         elif self.language == "csharp":
-            return self.analyze_csharp_code(code)
-
+            return self._lint_csharp()
         else:
-            raise ValueError("Unsupported language")
+            return "Unsupported language"
 
-    def run_eslint(self, code):
-        # Run ESLint using subprocess
-        process = subprocess.Popen(
-            ["npx eslint", "--format=json", "--stdin"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        stdout, stderr = process.communicate(input=code)
+    def _lint_python(self):
+        class LintOutput(io.StringIO):
+            def __init__(self):
+                super().__init__()
+                self.contents = ""
 
-        if process.returncode == 0:
-            # Parse ESLint output
-            lint_results = json.loads(stdout)
-            return lint_results
+            def write(self, message):
+                if message.strip():
+                    self.contents += message
 
+        old_stdout = sys.stdout
+        lint_output = LintOutput()
+        sys.stdout = lint_output
+        try:
+            ast.parse(self.code)
+        except SyntaxError as e:
+            print(str(e))
+        sys.stdout = old_stdout
+        if lint_output.contents.strip():
+            return lint_output.contents.strip()
         else:
-            # Handle error if ESLint command fails
-            print("Error running ESLint:", stderr)
-            return []
+            return "No linting issues found."
 
-    def analyze_csharp_code(self, code):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            cs_file_path = os.path.join(temp_dir, "yourfile.cs")
-            with open(cs_file_path, "w") as file:
-                file.write(code)
+    def _lint_javascript(self):
+        try:
+            pyjsparser.parse(self.code)
+            return "No linting issues found."
+        except Exception as e:
+            return str(e)
 
-            try:
-                process = subprocess.Popen(
-                    ["dotnet", "new", "console", "--name", "temp_project"],
-                    cwd=temp_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                process.communicate()
+    def _lint_csharp(self):
+        try:
+            # Create a temporary directory
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Define the path to the temporary C# file
+                temp_file_path = os.path.join(temp_dir, "temp.cs")
+                # Define the path to the temporary project file
+                temp_project_file = os.path.join(temp_dir, "temp.csproj")
+                
+                # Write code to the temporary file
+                with open(temp_file_path, "w") as file:
+                    file.write(self.code)
 
-                process = subprocess.Popen(
-                    ["dotnet", "add", "file", cs_file_path],
-                    cwd=temp_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                stdout, stderr = process.communicate()
+                # Write minimal .csproj file
+                with open(temp_project_file, "w") as proj_file:
+                    proj_file.write("<Project Sdk=\"Microsoft.NET.Sdk\">\n")
+                    proj_file.write("  <PropertyGroup>\n")
+                    proj_file.write("    <OutputType>Exe</OutputType>\n")
+                    proj_file.write("    <TargetFramework>net6.0</TargetFramework>\n")
+                    proj_file.write("  </PropertyGroup>\n")
+                    proj_file.write("</Project>\n")
 
-                process = subprocess.Popen(
-                    ["dotnet", "build"],
-                    cwd=temp_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                stdout, stderr = process.communicate()
+                # Execute dotnet build within the temporary directory
+                compiler_output = subprocess.check_output(["dotnet", "build", temp_project_file], cwd=temp_dir, stderr=subprocess.STDOUT, text=True)
 
-                warnings, errors = self.parse_output(stdout.decode("utf-8"), stderr.decode("utf-8"))
-
-                return warnings, errors
-            finally:
-                shutil.rmtree(temp_dir)
-
-    def parse_output(output, error):
-        warnings = []
-        errors = []
-
-        output_lines = output.split("\n")
-
-        for line in output_lines:
-            if re.match(r"^[Ww]arning: SEVERITY: (.*)", line):
-                warning_message = re.search(r"^[Ww]arning: SEVERITY: (.*)", line).group(1)
-                warnings.append(warning_message)
-
-            elif re.match(r"^Error: (.*)", line):
-                error_message = re.search(r"^Error: (.*)", line).group(1)
-                errors.append(error_message)
-
-        return warnings, errors
-
-    def extract_errors(self, code, language):
-        lint_results = self.lint(code, language)
-        errors = self.extract_errors_from_lint_results(lint_results)
-        error_string = "\n".join([f"Error at line {line}, column {column}: {error}" for line, column, error in errors])
-        return error_string
-
-    def extract_errors_from_lint_results(self, lint_results):
-        if self.language == "python":
-            return self.python_extractor(lint_results)
-        elif self.language == "javascript":
-            return self.extract_javascript_errors(lint_results)
-        elif self.language == "csharp":
-            return self.extract_csharp_errors(lint_results)
-        else:
-            return []
-
-    def extract_python_errors(self, messages):
-        return [(msg.line, msg.column, msg.msg) for msg in messages]
-
-    def extract_javascript_errors(self, lint_results):
-        # Extract error information from ESLint output
-        errors = []
-        for result in lint_results:
-            if result["severity"] > 1:
-                errors.append((result["line"], result["column"], result["message"]))
-        return errors
-
-    def extract_csharp_errors(self, diagnostics):
-        # Extract error information from Roslyn diagnostics
-        errors = []
-        for diag in diagnostics:
-            if diag.Severity > 1:
-                line_span = diag.Location.GetLineSpan()
-                errors.append((line_span.StartLinePosition.Line, line_span.StartLinePosition.Character, diag.GetMessage()))
-        return errors
-
-linter = Linter()
+                # Return compiler output (may include errors)
+                return compiler_output.strip()
+        except subprocess.CalledProcessError as e:
+            # Return compiler error message
+            return e.output.strip()

@@ -5,5 +5,5 @@ markupsafe
 psutil
 pylint 
 rope
-esprima
 clr
+pyjsparser

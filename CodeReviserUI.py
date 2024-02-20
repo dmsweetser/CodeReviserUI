@@ -82,14 +82,15 @@ def start_batch():
     start_batch_job(app.config['REVISIONS_DB'], app.config['MODEL_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
     return redirect(url_for('index'))
 
-@app.route('/clear_batch_job/<int:job_id>', methods=['GET'])
+@app.route('/clear_batch_job/<int:job_id>', methods=['POST'])
 def clear_batch_job(job_id):
     clear_job(job_id)
     return redirect(url_for('index'))
 
-@app.route('/reset_batch_job_status/<int:job_id>', methods=['GET'])
+@app.route('/reset_batch_job_status/<int:job_id>', methods=['POST'])
 def reset_batch_job_status(job_id):
-    # TODO implement this
+    batch_requests_file = get_config("job_file", "")
+    update_job_status(batch_requests_file, job_id, "NEW", clear_file_contents=False)
     return redirect(url_for('index'))
 
 @app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])

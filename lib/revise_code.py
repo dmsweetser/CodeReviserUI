@@ -21,9 +21,15 @@ def run(original_code, llama_model, initial_prompt):
         # Use the provided prompt if given, else use the one from config
         prompt = default_prompt
 
-    linter = Linter()
-    # TODO figure out how to pass the language
-    current_errors = linter.extract_errors(original_code, "csharp")
+    language = ""
+    if "python" in initial_prompt.lower():
+        language = "python"
+    elif "javascript" in initial_prompt.lower():
+        language = "javascript"
+    elif "c#" in initial_prompt.lower():
+        language = "csharp"
+    linter = Linter(original_code, language)
+    current_errors = linter.lint()
 
     print(current_errors)
 
