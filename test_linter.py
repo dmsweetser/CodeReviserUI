@@ -19,8 +19,9 @@ def test_linter():
     {
         static void Main(string[] args)
         {
+            test = 15;
             string message = "Hello, world!";
-            Console.WriteLine(message)
+            Console.WriteLine(message);
         }
     }
     """
