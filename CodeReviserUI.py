@@ -45,24 +45,16 @@ def index():
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
     return render_template('index.html', jobs=jobs, revisions=all_revisions)
 
-@app.route('/latest_revisions')
-def latest_revisions():
-    all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
-    all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
-    return render_template('latest_revisions.html', revisions=all_revisions)
-
 @app.route('/edit_config')
 def edit_config():
-   config = json.load(open('user_config.json'))
-   return render_template('edit_config.html', config=config)
+  config = json.load(open('user_config.json'))
+  return render_template('edit_config.html', config=json.dumps(config, indent=4))
 
 @app.route('/save_config', methods=['POST'])
 def save_config():
-   config = json.load(open('user_config.json'))
-   for key, value in request.form.items():
-       config[key] = value
-   open('user_config.json', 'w').write(json.dumps(config, indent=4))
-   return jsonify({'message': 'Config saved successfully.'})
+  config = request.get_json()
+  open('user_config.json', 'w').write(json.dumps(config, indent=4))
+  return jsonify({'message': 'Config saved successfully.'})
 
 @app.route('/queue', methods=['POST'])
 def queue():
@@ -120,6 +112,17 @@ def edit_revision(filename, revision_id):
         new_content = request.form['new_content']
         update_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id, new_content)
         return redirect(url_for('index'))
+    
+@app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
+def edit_revision(filename, revision_id):
+   if request.method == 'GET':
+       latest_revisions = get_latest_revisions(filename, current_user.id, app.config['REVISIONS_DB'])
+       initial_instruction = get_initial_instruction(filename, app.config['REVISIONS_DB'])
+       return render_template('edit_revision.html', filename=filename, revision_id=revision_id, latest_revisions=latest_revisions, initial_instruction=initial_instruction)
+   elif request.method == 'POST':
+       new_content = request.form['new_content']
+       update_revision_content(app.config['REVISIONS_DB'], filename, revision_id, current_user.id, new_content)
+       return redirect(url_for('index'))
 
 @app.route('/compare-revisions/<string:filename>/<int:revision_id1>', methods=['GET'])
 def compare_revisions(filename, revision_id1):

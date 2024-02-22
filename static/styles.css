@@ -13,6 +13,10 @@
     margin:auto;
 }
 
+#config-json {
+    height:80vh !important;
+}
+
 #batchedJobsAccordion {
     text-align: left !important;
 }
