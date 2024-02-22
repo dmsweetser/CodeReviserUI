@@ -113,17 +113,6 @@ def edit_revision(filename, revision_id):
         update_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id, new_content)
         return redirect(url_for('index'))
     
-@app.route('/edit-revision/<string:filename>/<int:revision_id>', methods=['GET', 'POST'])
-def edit_revision(filename, revision_id):
-   if request.method == 'GET':
-       latest_revisions = get_latest_revisions(filename, current_user.id, app.config['REVISIONS_DB'])
-       initial_instruction = get_initial_instruction(filename, app.config['REVISIONS_DB'])
-       return render_template('edit_revision.html', filename=filename, revision_id=revision_id, latest_revisions=latest_revisions, initial_instruction=initial_instruction)
-   elif request.method == 'POST':
-       new_content = request.form['new_content']
-       update_revision_content(app.config['REVISIONS_DB'], filename, revision_id, current_user.id, new_content)
-       return redirect(url_for('index'))
-
 @app.route('/compare-revisions/<string:filename>/<int:revision_id1>', methods=['GET'])
 def compare_revisions(filename, revision_id1):
     try:

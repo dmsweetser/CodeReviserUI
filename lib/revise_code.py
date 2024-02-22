@@ -9,7 +9,7 @@ def extract_code_from_markdown(markdown):
 def run(original_code, llama_model, prompt):
 
     # Check if extracting from Markdown is enabled in config
-    extract_from_markdown = get_config('extract_from_markdown', True)
+    extract_from_markdown = get_config('extract_from_markdown', '')
 
     response = llama_model.create_completion(
         prompt,
