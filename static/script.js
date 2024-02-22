@@ -39,3 +39,31 @@ document.addEventListener('DOMContentLoaded', function () {
         sessionStorage.setItem('accordionState', JSON.stringify(accordionData));
     }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const editBtns = document.querySelectorAll('.edit-btn');
+    editBtns.forEach(btn => btn.addEventListener('click', async function () {
+        const file = this.dataset.file;
+        const revision = this.dataset.revision;
+        const response = await fetch(`/edit_revision/${file}/${revision}`);
+        const data = await response.json();
+        const codeDiv = document.getElementById(`code_${file}`);
+        codeDiv.innerHTML = data.content;
+        const editBtn = this;
+        codeDiv.nextElementSibling.innerHTML = `<button type="button" class="btn btn-warning btn-sm ms-2 edit-btn" data-bs-toggle="button" data-file="${file}" data-revision="${revision}" data-content="${data.content}" onclick="saveRevision('${file}','${revision}')">Save Changes</button>`;
+        this.disabled = true;
+    }));
+});
+
+async function saveRevision(file, revision) {
+    const content = document.getElementById(`code_${file}`).innerHTML;
+    const response = await fetch(`/edit_revision/${file}/${revision}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+    });
+    const data = await response.json();
+    if (data.success) {
+        window.location.reload();
+    }
+}

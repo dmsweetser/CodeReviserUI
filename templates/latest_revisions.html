@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Latest Revisions - Code Reviser UI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+   <h2>Latest Revisions</h2>
+   <div id="manageRevisionsAccordion">
+       {% if revisions %}
+       {% set files = {} %}
+       {% for revision in revisions|map(lambda r: (r[2], r))|unique(key="item[0]") %} {# Get unique files #}
+       {% set file_name = revision[0] %}
+       <div class="accordion-item">
+           <h2 class="accordion-header" id="manageRevisionsHeader{{ file_name }}">
+               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#manageRevisionsCollapse{{ file_name }}" aria-expanded="false"
+                  aria-controls="manageRevisionsCollapse{{ file_name }}">
+                  {{ file_name }}
+               </button>
+           </h2>
+           <div id="manageRevisionsCollapse{{ file_name }}" class="accordion-collapse collapse"
+               aria-labelledby="manageRevisionsHeader{{ file_name }}" style="">
+               <div class="accordion-body">
+                  <div class="row">
+                      <div class="col-md-6">
+                          <p>Latest Revision:</p>
+                          <pre><code id="code_{{ file_name }}" class="language-{{ get_language(file_name) }}">{{ revision[1][1] }}</code></pre>
+                      </div>
+                      <div class="col-md-6">
+                          <button type="button" class="btn btn-warning btn-sm ms-2 edit-btn" data-bs-toggle="button"
+                              data-file="{{ file_name }}" data-revision="{{ revision[0] }}">Edit</button>
+                      </div>
+                  </div>
+               </div>
+           </div>
+       </div>
+       {% endfor %}
+       {% else %}
+       <p>No revisions found.</p>
+       {% endif %}
+   </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+   function get_language(filename) {
+       const extension = filename.split('.').pop();
+       switch (extension) {
+           case 'py':
+               return 'python';
+           case 'js':
+               return 'javascript';
+           case 'cs':
+               return 'csharp';
+           default:
+               return 'plaintext';
+       }
+   }
+</script>
+{% endblock %}
+
+{% import "../static/macros/unique.macro.js" as unique %}

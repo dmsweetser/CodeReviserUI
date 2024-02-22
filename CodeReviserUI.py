@@ -45,6 +45,12 @@ def index():
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
     return render_template('index.html', jobs=jobs, revisions=all_revisions)
 
+@app.route('/latest_revisions')
+def latest_revisions():
+    all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
+    all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
+    return render_template('latest_revisions.html', revisions=all_revisions)
+
 @app.route('/edit_config')
 def edit_config():
    config = json.load(open('user_config.json'))

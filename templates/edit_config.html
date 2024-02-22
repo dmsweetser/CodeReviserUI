@@ -4,155 +4,171 @@
 
 {% block content %}
 <form id="config-form">
-    <form id="config-form">
-        <div>
-            <label for="host">Host:</label>
-            <input type="text" id="host" name="host" value="{{ config.host }}">
+    <form id="config-form" class="needs-validation" novalidate>
+        <div class="form-group">
+            <label for="host" class="form-label">Host:</label>
+            <input type="text" id="host" name="host" class="form-control" value="{{ config.host }}">
         </div>
-        <div>
-            <label for="port">Port:</label>
-            <input type="number" id="port" name="port" value="{{ config.port }}">
+        <div class="form-group">
+            <label for="port" class="form-label">Port:</label>
+            <input type="number" id="port" name="port" class="form-control" value="{{ config.port }}">
         </div>
-        <div>
-            <label for="secret_key">Secret Key:</label>
-            <input type="text" id="secret_key" name="secret_key" value="{{ config.secret_key }}">
+        <div class="form-group">
+            <label for="secret_key" class="form-label">Secret Key:</label>
+            <input type="text" id="secret_key" name="secret_key" class="form-control" value="{{ config.secret_key }}">
         </div>
-        <div>
-            <label for="model_folder">Model Folder:</label>
-            <input type="text" id="model_folder" name="model_folder" value="{{ config.model_folder }}">
+        <div class="form-group">
+            <label for="model_folder" class="form-label">Model Folder:</label>
+            <input type="text" id="model_folder" name="model_folder" class="form-control"
+                value="{{ config.model_folder }}">
         </div>
-        <div>
-            <label for="revisions_db">Revisions DB:</label>
-            <input type="text" id="revisions_db" name="revisions_db" value="{{ config.revisions_db }}">
+        <div class="form-group">
+            <label for="revisions_db" class="form-label">Revisions DB:</label>
+            <input type="text" id="revisions_db" name="revisions_db" class="form-control"
+                value="{{ config.revisions_db }}">
         </div>
-        <div>
-            <label for="model_url">Model URL:</label>
-            <input type="text" id="model_url" name="model_url" value="{{ config.model_url }}">
+        <div class="form-group">
+            <label for="model_url" class="form-label">Model URL:</label>
+            <input type="text" id="model_url" name="model_url" class="form-control" value="{{ config.model_url }}">
         </div>
-        <div>
-            <label for="default_prompt">Default Prompt:</label>
-            <textarea id="default_prompt" name="default_prompt">{{ config.default_prompt }}</textarea>
+        <div class="form-group">
+            <label for="default_prompt" class="form-label">Default Prompt:</label>
+            <textarea id="default_prompt" name="default_prompt" class="form-control"
+                rows="3">{{ config.default_prompt }}</textarea>
         </div>
-        <div>
-            <label for="revision_prompt">Revision Prompt:</label>
-            <textarea id="revision_prompt" name="revision_prompt">{{ config.revision_prompt }}</textarea>
+        <div class="form-group">
+            <label for="revision_prompt" class="form-label">Revision Prompt:</label>
+            <textarea id="revision_prompt" name="revision_prompt" class="form-control"
+                rows="3">{{ config.revision_prompt }}</textarea>
         </div>
-        <div>
-            <label for="extract_from_markdown">Extract from Markdown:</label>
-            <input type="checkbox" id="extract_from_markdown" name="extract_from_markdown" value="true" {{ 'checked' if
-                config.extract_from_markdown else '' }}>
-            <div>
-                <label for="revisions_per_page">Revisions per Page:</label>
-                <input type="number" id="revisions_per_page" name="revisions_per_page"
+        <div class="form-check">
+            <input type="checkbox" id="extract_from_markdown" name="extract_from_markdown" class="form-check-input"
+                value="{{config.extract_from_markdown}}" {{ 'checked' if config.extract_from_markdown else '' }}>
+            <label for="extract_from_markdown" class="form-check-label">Extract from Markdown</label>
+        </div>
+        <div class="form-group row">
+            <label for="revisions_per_page" class="col-sm-2 col-form-label">Revisions per Page:</label>
+            <div class="col-sm-10">
+                <input type="number" id="revisions_per_page" name="revisions_per_page" class="form-control"
                     value="{{ config.revisions_per_page }}">
             </div>
-            <div>
-                <label for="session_type">Session Type:</label>
-                <select id="session_type" name="session_type">
-                    <option value="filesystem" {{ 'checked' if config.session_type=="filesystem" else '' }}>Filesystem
-                    </option>
-                    <option value="cookie" {{ 'checked' if config.session_type=="cookie" else '' }}>Cookie</option>
-                </select>
-            </div>
-            <div>
-                <label for="max_file_size">Max File Size:</label>
-                <input type="number" id="max_file_size" name="max_file_size" value="{{ config.max_file_size }}">
-            </div>
-            <div>
-                <label for="job_file">Job File:</label>
-                <input type="text" id="job_file" name="job_file" value="{{ config.job_file }}">
-            </div>
-            <div>
-                <label for="model">Model:</label>
-                <input type="text" id="model" name="model" value="{{ config.model }}">
-            </div>
-            <div>
-                <label for="n_ctx">Context Length:</label>
-                <input type="number" id="n_ctx" name="n_ctx" value="{{ config.n_ctx }}">
-            </div>
-            <div>
-                <label for="max_tokens">Max Tokens:</label>
-                <input type="number" id="max_tokens" name="max_tokens" value="{{ config.max_tokens }}">
-            </div>
-            <div>
-                <label for="n_batch">Batch Size:</label>
-                <input type="number" id="n_batch" name="n_batch" value="{{ config.n_batch }}">
-            </div>
-            <div>
-                <label for="n_threads">Number of Threads:</label>
-                <input type="number" id="n_threads" name="n_threads" value="{{ config.n_threads }}">
-            </div>
-            <div>
-                <label for="n_threads_batch">Number of Threads per Batch:</label>
-                <input type="number" id="n_threads_batch" name="n_threads_batch" value="{{ config.n_threads_batch }}">
-            </div>
-            <div>
-                <label for="use_mmap">Use mmap:</label>
-                <input type="checkbox" id="use_mmap" name="use_mmap" value="true" {{ 'checked' if config.use_mmap
-                    else '' }}>
-            </div>
-            <div>
-                <label for="use_mlock">Use mlock:</label>
-                <input type="checkbox" id="use_mlock" name="use_mlock" value="true" {{ 'checked' if config.use_mlock
-                    else '' }}>
-            </div>
-            <div>
-                <label for="n_gpu_layers">Number of GPU Layers:</label>
-                <input type="number" id="n_gpu_layers" name="n_gpu_layers" value="{{ config.n_gpu_layers }}">
-            </div>
-            <div>
-                <label for="main_gpu">Main GPU:</label>
-                <select id="main_gpu" name="main_gpu">
-                    <option value="0" {{ 'checked' if config.main_gpu==0 else '' }}>0</option>
-                    <option value="1" {{ 'checked' if config.main_gpu==1 else '' }}>1</option>
-                </select>
-            </div>
-            <div>
-                <label for="tensor_split">Tensor Split:</label>
-                <input type="text" id="tensor_split" name="tensor_split" value="{{ config.tensor_split }}">
-            </div>
-            <div>
-                <label for="rope_freq_base">Rope Frequency Base:</label>
-                <input type="number" id="rope_freq_base" name="rope_freq_base" value="{{ config.rope_freq_base }}">
-            </div>
-            <div>
-                <label for="numa">Use NUMA:</label>
-                <input type="checkbox" id="numa" name="numa" value="true" {{ 'checked' if config.numa else '' }}>
-            </div>
-            <div>
-                <label for="temperature">Temperature:</label>
-                <input type="number" id="temperature" name="temperature" value="{{ config.temperature }}">
-            </div>
-            <div>
-                <label for="top_p">Top p:</label>
-                <input type="number" id="top_p" name="top_p" value="{{ config.top_p }}">
-            </div>
-            <div>
-                <label for="top_k">Top k:</label>
-                <input type="number" id="top_k" name="top_k" value="{{ config.top_k }}">
-            </div>
-            <div>
-                <label for="repeat_penalty">Repeat Penalty:</label>
-                <input type="number" id="repeat_penalty" name="repeat_penalty" value="{{ config.repeat_penalty }}">
-            </div>
-            <div>
-                <label for="typical_p">Typical p:</label>
-                <input type="number" id="typical_p" name="typical_p" value="{{ config.typical_p }}">
-            </div>
-            <div>
-                <label for="host_instances">Host Instances:</label>
-                <textarea id="host_instances" name="host_instances">{{ config.host_instances }}</textarea>
-            </div>
-            <div>
-                <label for="model_path">Model Path:</label>
-                <input type="text" id="model_path" name="model_path" value="{{ config.model_path }}">
-            </div>
-            <div>
-                <label for="verbose">Verbose:</label>
-                <input type="checkbox" id="verbose" name="verbose" value="true" {{ 'checked' if config.verbose else ''
-                    }}>
-            </div>
-            <button type="submit">Save Changes</button>
+        </div>
+        <div class="form-group">
+            <label for="session_type" class="form-label">Session Type:</label>
+            <select id="session_type" name="session_type" class="form-select">
+                <option value="filesystem" {{ 'selected' if config.session_type=="filesystem" else '' }}>Filesystem
+                </option>
+                <option value="cookie" {{ 'selected' if config.session_type=="cookie" else '' }}>Cookie</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="max_file_size" class="form-label">Max File Size:</label>
+            <input type="number" id="max_file_size" name="max_file_size" class="form-control"
+                value="{{ config.max_file_size }}">
+        </div>
+        <div class="form-group">
+            <label for="job_file" class="form-label">Job File:</label>
+            <input type="text" id="job_file" name="job_file" class="form-control" value="{{ config.job_file }}">
+        </div>
+        <div class="form-group">
+            <label for="model" class="form-label">Model:</label>
+            <input type="text" id="model" name="model" class="form-control" value="{{ config.model }}">
+        </div>
+        <div class="form-group">
+            <label for="n_ctx" class="form-label">Context Length:</label>
+            <input type="number" id="n_ctx" name="n_ctx" class="form-control" value="{{ config.n_ctx }}">
+        </div>
+        <div class="form-group">
+            <label for="max_tokens" class="form-label">Max Tokens:</label>
+            <input type="number" id="max_tokens" name="max_tokens" class="form-control" value="{{ config.max_tokens }}">
+        </div>
+        <div class="form-group">
+            <label for="n_batch" class="form-label">Batch Size:</label>
+            <input type="number" id="n_batch" name="n_batch" class="form-control" value="{{ config.n_batch }}">
+        </div>
+        <div class="form-group">
+            <label for="n_threads" class="form-label">Number of Threads:</label>
+            <input type="number" id="n_threads" name="n_threads" class="form-control" value="{{ config.n_threads }}">
+        </div>
+        <div class="form-group">
+            <label for="n_threads_batch" class="form-label">Number of Threads per Batch:</label>
+            <input type="number" id="n_threads_batch" name="n_threads_batch" class="form-control"
+                value="{{ config.n_threads_batch }}">
+        </div>
+        <div class="form-check">
+            <input type="checkbox" id="use_mmap" name="use_mmap" class="form-check-input" value="{{ config.use_mmap }}" {{ 'checked' if
+                config.use_mmap else '' }}>
+            <label for="use_mmap" class="form-check-label">Use mmap</label>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" id="use_mlock" name="use_mlock" class="form-check-input" value="{{ config.use_mlock }}" {{ 'checked' if
+                config.use_mlock else '' }}>
+            <label for="use_mlock" class="form-check-label">Use mlock</label>
+        </div>
+        <div class="form-group">
+            <label for="n_gpu_layers" class="form-label">Number of GPU Layers:</label>
+            <input type="number" id="n_gpu_layers" name="n_gpu_layers" class="form-control"
+                value="{{ config.n_gpu_layers }}">
+        </div>
+        <div class="form-group">
+            <label for="main_gpu" class="form-label">Main GPU:</label>
+            <select id="main_gpu" name="main_gpu" class="form-select">
+                <option value="0" {{ 'selected' if config.main_gpu==0 else '' }}>0</option>
+                <option value="1" {{ 'selected' if config.main_gpu==1 else '' }}>1</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="tensor_split" class="form-label">Tensor Split:</label>
+            <input type="text" id="tensor_split" name="tensor_split" class="form-control"
+                value="{{ config.tensor_split }}">
+        </div>
+        <div class="form-group">
+            <label for="rope_freq_base" class="form-label">Rope Frequency Base:</label>
+            <input type="number" id="rope_freq_base" name="rope_freq_base" class="form-control"
+                value="{{ config.rope_freq_base }}">
+        </div>
+        <div class="form-check">
+            <input type="checkbox" id="numa" name="numa" class="form-check-input" value="{{ config.numa }}" {{ 'checked' if
+                config.numa else '' }}>
+            <label for="numa" class="form-check-label">Use NUMA</label>
+        </div>
+        <div class="form-group">
+            <label for="temperature" class="form-label">Temperature:</label>
+            <input type="number" id="temperature" name="temperature" class="form-control"
+                value="{{ config.temperature }}">
+        </div>
+        <div class="form-group">
+            <label for="top_p" class="form-label">Top p:</label>
+            <input type="number" id="top_p" name="top_p" class="form-control" value="{{ config.top_p }}">
+        </div>
+        <div class="form-group">
+            <label for="top_k" class="form-label">Top k:</label>
+            <input type="number" id="top_k" name="top_k" class="form-control" value="{{ config.top_k }}">
+        </div>
+        <div class="form-group">
+            <label for="repeat_penalty" class="form-label">Repeat Penalty:</label>
+            <input type="number" id="repeat_penalty" name="repeat_penalty" class="form-control"
+                value="{{ config.repeat_penalty }}">
+        </div>
+        <div class="form-group">
+            <label for="typical_p" class="form-label">Typical p:</label>
+            <input type="number" id="typical_p" name="typical_p" class="form-control" value="{{ config.typical_p }}">
+        </div>
+        <div class="form-group">
+            <label for="host_instances" class="form-label">Host Instances:</label>
+            <textarea id="host_instances" name="host_instances" class="form-control"
+                rows="3">{{ config.host_instances }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="model_path" class="form-label">Model Path:</label>
+            <input type="text" id="model_path" name="model_path" class="form-control" value="{{ config.model_path }}">
+        </div>
+        <div class="form-check">
+            <input type="checkbox" id="verbose" name="verbose" class="form-check-input" value="{{ config.verbose }}" {{ 'checked' if
+                config.verbose else '' }}>
+            <label for="verbose" class="form-check-label">Verbose</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
     <script>
         document.getElementById('config-form').addEventListener('submit', function (e) {
@@ -165,6 +181,15 @@
                 .then(response => response.text())
                 .then(data => console.log('Config saved successfully.'))
                 .catch(error => console.log('Error saving config: ' + error));
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const checkboxes = document.querySelectorAll('.form-check input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    this.value = this.checked;
+                });
+            });
         });
     </script>
     {% endblock %}

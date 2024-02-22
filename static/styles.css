@@ -7,6 +7,12 @@
     max-width: 95% !important;
 }
 
+#config-form {
+    width: 50% !important;
+    max-width: 50% !important;
+    margin:auto;
+}
+
 #batchedJobsAccordion {
     text-align: left !important;
 }
