@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Config - Code Reviser UI{% endblock %}
+
+{% block content %}
+<form id="config-form">
+    <form id="config-form">
+        <div>
+            <label for="host">Host:</label>
+            <input type="text" id="host" name="host" value="{{ config.host }}">
+        </div>
+        <div>
+            <label for="port">Port:</label>
+            <input type="number" id="port" name="port" value="{{ config.port }}">
+        </div>
+        <div>
+            <label for="secret_key">Secret Key:</label>
+            <input type="text" id="secret_key" name="secret_key" value="{{ config.secret_key }}">
+        </div>
+        <div>
+            <label for="model_folder">Model Folder:</label>
+            <input type="text" id="model_folder" name="model_folder" value="{{ config.model_folder }}">
+        </div>
+        <div>
+            <label for="revisions_db">Revisions DB:</label>
+            <input type="text" id="revisions_db" name="revisions_db" value="{{ config.revisions_db }}">
+        </div>
+        <div>
+            <label for="model_url">Model URL:</label>
+            <input type="text" id="model_url" name="model_url" value="{{ config.model_url }}">
+        </div>
+        <div>
+            <label for="default_prompt">Default Prompt:</label>
+            <textarea id="default_prompt" name="default_prompt">{{ config.default_prompt }}</textarea>
+        </div>
+        <div>
+            <label for="revision_prompt">Revision Prompt:</label>
+            <textarea id="revision_prompt" name="revision_prompt">{{ config.revision_prompt }}</textarea>
+        </div>
+        <div>
+            <label for="extract_from_markdown">Extract from Markdown:</label>
+            <input type="checkbox" id="extract_from_markdown" name="extract_from_markdown" value="true" {{ 'checked' if
+                config.extract_from_markdown else '' }}>
+            <div>
+                <label for="revisions_per_page">Revisions per Page:</label>
+                <input type="number" id="revisions_per_page" name="revisions_per_page"
+                    value="{{ config.revisions_per_page }}">
+            </div>
+            <div>
+                <label for="session_type">Session Type:</label>
+                <select id="session_type" name="session_type">
+                    <option value="filesystem" {{ 'checked' if config.session_type=="filesystem" else '' }}>Filesystem
+                    </option>
+                    <option value="cookie" {{ 'checked' if config.session_type=="cookie" else '' }}>Cookie</option>
+                </select>
+            </div>
+            <div>
+                <label for="max_file_size">Max File Size:</label>
+                <input type="number" id="max_file_size" name="max_file_size" value="{{ config.max_file_size }}">
+            </div>
+            <div>
+                <label for="job_file">Job File:</label>
+                <input type="text" id="job_file" name="job_file" value="{{ config.job_file }}">
+            </div>
+            <div>
+                <label for="model">Model:</label>
+                <input type="text" id="model" name="model" value="{{ config.model }}">
+            </div>
+            <div>
+                <label for="n_ctx">Context Length:</label>
+                <input type="number" id="n_ctx" name="n_ctx" value="{{ config.n_ctx }}">
+            </div>
+            <div>
+                <label for="max_tokens">Max Tokens:</label>
+                <input type="number" id="max_tokens" name="max_tokens" value="{{ config.max_tokens }}">
+            </div>
+            <div>
+                <label for="n_batch">Batch Size:</label>
+                <input type="number" id="n_batch" name="n_batch" value="{{ config.n_batch }}">
+            </div>
+            <div>
+                <label for="n_threads">Number of Threads:</label>
+                <input type="number" id="n_threads" name="n_threads" value="{{ config.n_threads }}">
+            </div>
+            <div>
+                <label for="n_threads_batch">Number of Threads per Batch:</label>
+                <input type="number" id="n_threads_batch" name="n_threads_batch" value="{{ config.n_threads_batch }}">
+            </div>
+            <div>
+                <label for="use_mmap">Use mmap:</label>
+                <input type="checkbox" id="use_mmap" name="use_mmap" value="true" {{ 'checked' if config.use_mmap
+                    else '' }}>
+            </div>
+            <div>
+                <label for="use_mlock">Use mlock:</label>
+                <input type="checkbox" id="use_mlock" name="use_mlock" value="true" {{ 'checked' if config.use_mlock
+                    else '' }}>
+            </div>
+            <div>
+                <label for="n_gpu_layers">Number of GPU Layers:</label>
+                <input type="number" id="n_gpu_layers" name="n_gpu_layers" value="{{ config.n_gpu_layers }}">
+            </div>
+            <div>
+                <label for="main_gpu">Main GPU:</label>
+                <select id="main_gpu" name="main_gpu">
+                    <option value="0" {{ 'checked' if config.main_gpu==0 else '' }}>0</option>
+                    <option value="1" {{ 'checked' if config.main_gpu==1 else '' }}>1</option>
+                </select>
+            </div>
+            <div>
+                <label for="tensor_split">Tensor Split:</label>
+                <input type="text" id="tensor_split" name="tensor_split" value="{{ config.tensor_split }}">
+            </div>
+            <div>
+                <label for="rope_freq_base">Rope Frequency Base:</label>
+                <input type="number" id="rope_freq_base" name="rope_freq_base" value="{{ config.rope_freq_base }}">
+            </div>
+            <div>
+                <label for="numa">Use NUMA:</label>
+                <input type="checkbox" id="numa" name="numa" value="true" {{ 'checked' if config.numa else '' }}>
+            </div>
+            <div>
+                <label for="temperature">Temperature:</label>
+                <input type="number" id="temperature" name="temperature" value="{{ config.temperature }}">
+            </div>
+            <div>
+                <label for="top_p">Top p:</label>
+                <input type="number" id="top_p" name="top_p" value="{{ config.top_p }}">
+            </div>
+            <div>
+                <label for="top_k">Top k:</label>
+                <input type="number" id="top_k" name="top_k" value="{{ config.top_k }}">
+            </div>
+            <div>
+                <label for="repeat_penalty">Repeat Penalty:</label>
+                <input type="number" id="repeat_penalty" name="repeat_penalty" value="{{ config.repeat_penalty }}">
+            </div>
+            <div>
+                <label for="typical_p">Typical p:</label>
+                <input type="number" id="typical_p" name="typical_p" value="{{ config.typical_p }}">
+            </div>
+            <div>
+                <label for="host_instances">Host Instances:</label>
+                <textarea id="host_instances" name="host_instances">{{ config.host_instances }}</textarea>
+            </div>
+            <div>
+                <label for="model_path">Model Path:</label>
+                <input type="text" id="model_path" name="model_path" value="{{ config.model_path }}">
+            </div>
+            <div>
+                <label for="verbose">Verbose:</label>
+                <input type="checkbox" id="verbose" name="verbose" value="true" {{ 'checked' if config.verbose else ''
+                    }}>
+            </div>
+            <button type="submit">Save Changes</button>
+    </form>
+    <script>
+        document.getElementById('config-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('/save_config', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(data => console.log('Config saved successfully.'))
+                .catch(error => console.log('Error saving config: ' + error));
+        });
+    </script>
+    {% endblock %}

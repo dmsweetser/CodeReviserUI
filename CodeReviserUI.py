@@ -12,6 +12,7 @@ from lib.app_utils import *
 from lib import revise_code
 
 app = Flask(__name__)
+
 current_result = Array('c', b'\0' * 32768)
 
 # Load existing config or set defaults
@@ -43,6 +44,19 @@ def index():
     all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
     return render_template('index.html', jobs=jobs, revisions=all_revisions)
+
+@app.route('/edit_config')
+def edit_config():
+   config = json.load(open('user_config.json'))
+   return render_template('edit_config.html', config=config)
+
+@app.route('/save_config', methods=['POST'])
+def save_config():
+   config = json.load(open('user_config.json'))
+   for key, value in request.form.items():
+       config[key] = value
+   open('user_config.json', 'w').write(json.dumps(config, indent=4))
+   return jsonify({'message': 'Config saved successfully.'})
 
 @app.route('/queue', methods=['POST'])
 def queue():

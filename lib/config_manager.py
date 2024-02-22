@@ -3,16 +3,30 @@ import os
 import shutil
 
 def load_config():
-   config_file = "config.json"
-   user_config_file = "user_config.json"
+    config_file = "config.json"
+    user_config_file = "user_config.json"
 
-   if not os.path.isfile(user_config_file):
-       shutil.copy(config_file, user_config_file)
+    if not os.path.isfile(user_config_file):
+        shutil.copy(config_file, user_config_file)
 
-   with open(user_config_file, 'r') as file:
-       config_data = json.load(file)
+    with open(user_config_file, 'r') as user_file:
+        user_config = json.load(user_file)
 
-   return config_data
+    with open(config_file, 'r') as config_file:
+        config = json.load(config_file)
+
+    missing_keys = set(config.keys()) - set(user_config.keys())
+
+    if missing_keys:
+        print(f"Missing keys in user_config.json: {missing_keys}")
+
+        for key in missing_keys:
+            user_config[key] = config[key]
+
+        with open(user_config_file, 'w') as user_file:
+            json.dump(user_config, user_file, indent=2)
+
+    return user_config
 
 def is_numeric(value):
    return isinstance(value, (int, float)) and (isinstance(value, float) or str(value).replace('.', '', 1).isdigit())

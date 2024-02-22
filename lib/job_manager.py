@@ -199,7 +199,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             existing_revision = revisions[0]
             file_contents = existing_revision
         else:
-            save_revision(revisions_db, filename, user_id, file_contents)
+            save_revision(revisions_db, filename, user_id, file_contents, initial_prompt)
 
         # Get default prompt from config or use a default value
         default_prompt = get_config('default_prompt', "")
@@ -238,7 +238,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         response = requests.post(url, data=data)
         if response.status_code == 200:
             revision = response.content.decode()
-            save_revision(revisions_db, filename, user_id, revision)
+            save_revision(revisions_db, filename, user_id, revision, initial_prompt)
             print(f"Job {job_data['job_id']} completed. Result: {revision}")
             if rounds != -1:
                 update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
