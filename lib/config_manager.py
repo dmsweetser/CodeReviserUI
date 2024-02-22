@@ -3,30 +3,33 @@ import os
 import shutil
 
 def load_config():
-    config_file = "config.json"
-    user_config_file = "user_config.json"
+   config_file = "config.json"
+   user_config_file = "user_config.json"
 
-    if not os.path.isfile(user_config_file):
-        shutil.copy(config_file, user_config_file)
+   if not os.path.isfile(user_config_file):
+       shutil.copy(config_file, user_config_file)
 
-    with open(user_config_file, 'r') as user_file:
-        user_config = json.load(user_file)
+   with open(user_config_file, 'r') as user_file:
+       user_config = json.load(user_file)
 
-    with open(config_file, 'r') as config_file:
-        config = json.load(config_file)
+   with open(config_file, 'r') as config_file:
+       config = json.load(config_file)
 
-    missing_keys = set(config.keys()) - set(user_config.keys())
+       # Merge the user configuration with the main configuration
+       config = {**config, **user_config}
 
-    if missing_keys:
-        print(f"Missing keys in user_config.json: {missing_keys}")
+       missing_keys = set(config.keys()) - set(user_config.keys())
 
-        for key in missing_keys:
-            user_config[key] = config[key]
+       if missing_keys:
+           print(f"Missing keys in user_config.json: {missing_keys}")
 
-        with open(user_config_file, 'w') as user_file:
-            json.dump(user_config, user_file, indent=2)
+           for key in missing_keys:
+               user_config[key] = config[key]
 
-    return user_config
+           with open(user_config_file, 'w') as user_file:
+               json.dump(user_config, user_file, indent=2)
+
+       return user_config
 
 def is_numeric(value):
    return isinstance(value, (int, float)) and (isinstance(value, float) or str(value).replace('.', '', 1).isdigit())
