@@ -111,7 +111,7 @@ def get_all_revisions(user_id, revisions_db):
 def get_prior_revision(user_id, revisions_db, filename, revision_id1):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT id, revision, file_name FROM revisions WHERE user_id=? AND file_name=? AND id < ? ORDER BY id desc", (str(user_id), filename, revision_id1))
+    c.execute("SELECT id, revision, file_name, initial_instruction FROM revisions WHERE user_id=? AND file_name=? AND id < ? ORDER BY id desc", (str(user_id), filename, revision_id1))
     revision = c.fetchone()[0]
     conn.close()
     return revision
@@ -173,11 +173,11 @@ def compare_two_revisions(revisions_db, filename, revision_id1, revision_id2, us
     content2 = get_revision_content(revisions_db, filename, revision_id2, user_id)
 
     # Check if there are no differences between the two revisions
-    if content1 == content2:
+    if content1[0] == content2[0]:
         return "No differences found between the two revisions."
 
     # Generate the unified diff with a larger context to show the whole file
-    diff = difflib.unified_diff(content2.splitlines(), content1.splitlines(), n=context)
+    diff = difflib.unified_diff(content2[0].splitlines(), content1[0].splitlines(), n=context)
 
     # Create a basic HTML representation of the unified diff
     html_diff = '<html><head><style>pre { white-space: pre-wrap; }</style></head><body>'

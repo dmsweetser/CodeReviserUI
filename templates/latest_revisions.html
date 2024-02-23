@@ -14,6 +14,7 @@ $(document).ready(function() {
     getLatestRevisions().then(revisions => {
         let container = $('#revisions');
         revisions.forEach(revision => {
+            let url = `{{ url_for('edit_revision', filename=${revision.filename}, revision_id=${revision.revision_id}) }}`;
             container.append(`
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="heading${revision.id}">
@@ -23,7 +24,7 @@ $(document).ready(function() {
                     </h2>
                     <div id="collapse${revision.id}" class="accordion-collapse collapse" aria-labelledby="heading${revision.id}" data-bs-parent="#revisions">
                         <div class="accordion-body">
-                            <form method="post" action="{{ url_for('edit_revision', filename=${revision.filename}, revision_id=${revision.revision_id}) }}">
+                            <form method="post" action="${url}">
                                 <input type="hidden" name="filename" value="${revision.filename}">
                                 <input type="hidden" name="revision_id" value="${revision.revision_id}">
                                 <textarea class="form-control" id="new_content_${revision.id}" name="new_content" rows="20" required>${revision.content}</textarea>
