@@ -10,6 +10,10 @@
             <label for="new_content" class="form-label">New Content</label>
             <textarea class="form-control" id="new_content" name="new_content" rows="20" required>{{ revision_content }}</textarea>
         </div>
+        <div class="mb-3">
+            <label for="new_instruction" class="form-label">New Instructions</label>
+            <textarea class="form-control" id="new_instruction" name="new_instruction" rows="5" required>{{ initial_instruction }}</textarea>
+        </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
 </div>

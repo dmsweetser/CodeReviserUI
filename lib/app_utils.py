@@ -31,10 +31,10 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
     
-def get_latest_revisions(filename, user_id, revisions_db):
+def get_latest_revisions(filename, user_id, revisions_db, count=2):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT 2", (filename, user_id))
+    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT ?", (filename, user_id, count))
     revisions = c.fetchmany(2)
     conn.close()
 
@@ -42,7 +42,7 @@ def get_latest_revisions(filename, user_id, revisions_db):
         return tuple(revision[0] for revision in revisions)
     else:
         return None
-
+    
 def save_revision(revisions_db, filename, user_id, revision, initial_instruction):
     """Save a new revision of the given file in the SQLite database."""
     conn = sqlite3.connect(revisions_db)
@@ -102,7 +102,7 @@ def connect_db(revisions_db):
 def get_all_revisions(user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT id, revision, file_name FROM revisions WHERE user_id=? ORDER BY id desc", (str(user_id)))
+    c.execute("SELECT id, revision, file_name, initial_instruction FROM revisions WHERE user_id=? ORDER BY id desc", (str(user_id)))
     revisions = c.fetchall()
     conn.close()
     return revisions
@@ -141,11 +141,11 @@ def delete_revision_file(revisions_db, filename, revision_id, user_id):
     conn.close()
     return {'status': 'success', 'message': 'Revision deleted.'}
 
-def update_revision_content(revisions_db, filename, revision_id, user_id, new_content):
+def update_revision_content(revisions_db, filename, revision_id, user_id, new_content, new_instruction):
     """Update the content of a specific revision in the SQLite database."""
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("UPDATE revisions SET revision=? WHERE id=? AND file_name=? AND user_id=?", (new_content, revision_id, filename, user_id))
+    c.execute("UPDATE revisions SET revision=?, initial_instruction=? WHERE id=? AND file_name=? AND user_id=?", (new_content, new_instruction, revision_id, filename, user_id))
     conn.commit()
     conn.close()
 
@@ -153,10 +153,10 @@ def get_revision_content(revisions_db, filename, revision_id, user_id):
     """Retrieve the content of a specific revision from the SQLite database."""
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT revision FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
-    revision_content = c.fetchone()
+    c.execute("SELECT revision, initial_instruction FROM revisions WHERE id=? AND file_name=? AND user_id=?", (revision_id, filename, user_id))
+    revision_content, initial_instruction = c.fetchone()
     conn.close()
-    return revision_content[0] if revision_content else None
+    return revision_content, initial_instruction if revision_content else None
 
 def get_revision_content_bytes(revisions_db, filename, revision_id, user_id):
     """Retrieve the content of a specific revision from the SQLite database as bytes."""
