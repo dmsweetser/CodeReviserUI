@@ -27,25 +27,10 @@ def init_db(revisions_db):
     conn = sqlite3.connect(revisions_db)
     c = conn.cursor()
     # Create table for revisions if it doesn't exist, with columns: id, file_name, revision, user_id
-    c.execute('''CREATE TABLE IF NOT EXISTS revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, file_name TEXT, revision TEXT, user_id INT)''')  # Add user_id column for authentication
+    c.execute('''CREATE TABLE IF NOT EXISTS revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, file_name TEXT, revision TEXT, user_id INT, initial_instruction TEXT)''')  # Add user_id column for authentication
     conn.commit()
     conn.close()
     
-def check_column_exists(revisions_db, column_name):
-    """Check if a column exists in the revisions table."""
-    conn = sqlite3.connect(revisions_db)
-    c = conn.cursor()
-
-    # Check if the column exists
-    c.execute("PRAGMA table_info(revisions, ?)", (column_name,))
-    result = c.fetchone()
-
-    # Close the connection to the database
-    conn.close()
-
-    # Return True if the column exists, False otherwise
-    return result is not None
-
 def get_latest_revisions(filename, user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()
@@ -62,12 +47,6 @@ def save_revision(revisions_db, filename, user_id, revision, initial_instruction
     """Save a new revision of the given file in the SQLite database."""
     conn = sqlite3.connect(revisions_db)
     c = conn.cursor()
-
-    # Check if the initial_instruction column exists
-    if not check_column_exists(revisions_db, 'initial_instruction'):
-        # Alter the revisions table to add the new column
-        c.execute('''ALTER TABLE revisions ADD COLUMN initial_instruction TEXT''')
-        conn.commit()
 
     # Insert a new revision into the revisions table
     c.execute("INSERT INTO revisions (file_name, revision, user_id, initial_instruction) VALUES (?, ?, ?, ?)", (filename, revision, user_id, initial_instruction))
