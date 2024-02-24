@@ -98,7 +98,24 @@ def load_model(model_url, model_folder, model_filename, max_context):
 def connect_db(revisions_db):
     return sqlite3.connect(revisions_db)
 
-# Helper function to get revisions for a given user
+def get_revisions_with_max_rows(user_id, revisions_db, max_rows):
+    conn = connect_db(revisions_db)
+    c = conn.cursor()
+    c.execute("""
+        SELECT id, revision, file_name, initial_instruction
+        FROM (
+            SELECT id, revision, file_name, initial_instruction,
+                   ROW_NUMBER() OVER (PARTITION BY file_name ORDER BY id DESC) AS row_num
+            FROM revisions
+            WHERE user_id=?
+        ) ranked_revisions
+        WHERE row_num <= ?
+        ORDER BY file_name, id DESC
+        """, (str(user_id), max_rows))
+    revisions = c.fetchall()
+    conn.close()
+    return revisions
+
 def get_all_revisions(user_id, revisions_db):
     conn = connect_db(revisions_db)
     c = conn.cursor()

@@ -27,7 +27,7 @@ def run(original_code, llama_model, prompt):
     revised_code = extract_code_from_markdown(revised_markdown) if extract_from_markdown else revised_markdown
 
     if len(revised_code) < .3 * len(original_code):
-        print("Generated code was too short")
+        print(f"Generated code was too short\n\n\nRevised Code\n\n\n{revised_code}")
         return original_code
     else:
         return revised_code

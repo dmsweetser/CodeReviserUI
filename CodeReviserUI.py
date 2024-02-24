@@ -41,7 +41,7 @@ init_db(app.config['REVISIONS_DB'])  # Pass the database path
 @app.route('/')
 def index():
     jobs = load_jobs()
-    all_revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
+    all_revisions = get_revisions_with_max_rows(current_user.id, app.config['REVISIONS_DB'], max_rows=5)
     all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
     return render_template('index.html', jobs=jobs, revisions=all_revisions)
 
@@ -53,7 +53,7 @@ def edit_config():
 @app.route('/save_config', methods=['POST'])
 def save_config():
   config = request.get_json()
-  open('user_config.json', 'w').write(json.dumps(config, indent=4))
+  open('user_config.json', 'w').write(json.dumps(config['config'], indent=4))
   return jsonify({'message': 'Config saved successfully.'})
 
 @app.route('/queue', methods=['POST'])
@@ -154,6 +154,13 @@ def latest_revisions():
     revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
     latest_revisions = [{'filename': revision[2], 'revision_id': revision[0], 'content': revision[1], 'initial_instruction': revision[3]} for revision in revisions]
     return render_template('latest_revisions.html', revisions=latest_revisions)
+
+@app.route('/save_latest_revision/<string:filename>/<int:revision_id>', methods=['POST'])
+def save_latest_revision(filename, revision_id):
+    new_content = request.form['new_content']
+    new_instruction = request.form['new_instruction']
+    update_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id, new_content, new_instruction)
+    return redirect(url_for('latest_revisions'))
 
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):
