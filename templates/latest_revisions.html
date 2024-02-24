@@ -1,53 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Latest Revisions - Code Reviser UI{% endblock %}
+{% block title %}Executive Review - Code Reviser UI{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Latest Revisions</h2>
-    <div id="revisions"></div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script>
-$(document).ready(function() {
-    getLatestRevisions().then(revisions => {
-        let container = $('#revisions');
-        revisions.forEach(revision => {
-            let url = `{{ url_for('edit_revision', filename=${revision.filename}, revision_id=${revision.revision_id}) }}`;
-            container.append(`
+   <h2>Executive Review</h2>
+   <div id="revisionsAccordion">
+       {% for revision in revisions %}
+       <div class="accordion mb-3" id="revisionsAccordion_{{ revision.filename }}_{{ revision.revision_id }}">
+           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ revision.filename }}_{{ revision.revision_id }}" aria-expanded="false" aria-controls="collapse{{ revision.filename }}_{{ revision.revision_id }}">
+               <h2 class="accordion-header">{{ revision.filename }}</h2>
+           </button>
+           <div id="collapse{{ revision.filename }}_{{ revision.revision_id }}" class="accordion-collapse collapse" data-bs-parent="#revisionsAccordion_{{ revision.filename }}_{{ revision.revision_id }}">
+               <div class="accordion-body">
                 <div class="accordion-item">
-                    <h2 class="accordion-header" id="heading${revision.id}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${revision.id}" aria-expanded="false" aria-controls="collapse${revision.id}">
-                            ${revision.filename} - Revision ${revision.revision_id}
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editRevision{{ loop.index }}" aria-expanded="false" aria-controls="editRevision{{ loop.index }}">
+                            Edit Revision
                         </button>
                     </h2>
-                    <div id="collapse${revision.id}" class="accordion-collapse collapse" aria-labelledby="heading${revision.id}" data-bs-parent="#revisions">
-                        <div class="accordion-body">
-                            <form method="post" action="${url}">
-                                <input type="hidden" name="filename" value="${revision.filename}">
-                                <input type="hidden" name="revision_id" value="${revision.revision_id}">
-                                <textarea class="form-control" id="new_content_${revision.id}" name="new_content" rows="20" required>${revision.content}</textarea>
-                                <textarea class="form-control" id="new_instruction_${revision.id}" name="new_instruction" rows="5" required>${revision.initial_instruction}</textarea>
+                    <div id="editRevision{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent=".accordion">
+                        <div class="container mt-2">
+                            <h2>Edit Revision</h2>
+                            <form method="post" action="{{ url_for('edit_revision', filename=revision.filename, revision_id=revision.revision_id) }}">
+                                <div class="mb-3">
+                                   <label for="new_content" class="form-label">New Content</label>
+                                   <textarea class="form-control" id="new_content" name="new_content" rows="20" required>{{ revision_content }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                   <label for="new_instruction" class="form-label">New Instructions</label>
+                                   <textarea class="form-control" id="new_instruction" name="new_instruction" rows="5" required>{{ initial_instruction }}</textarea>
+                                </div>
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
                             </form>
                         </div>
                     </div>
-                </div>
-            `);
-        });
-
-        $('.accordion-button').click(function() {
-            $(this).next().toggleClass('show');
-            $(this).parent().toggleClass('active');
-        });
-    });
-});
-
-async function getLatestRevisions() {
-    const response = await fetch('/get_latest_revisions');
-    const data = await response.json();
-    return data;
-}
-</script>
+                 </div>
+               </div>
+           </div>
+       </div>
+       {% endfor %}
+   </div>
+</div>
 {% endblock %}

@@ -107,7 +107,12 @@ def reset_batch_job_status(job_id):
 def edit_revision(filename, revision_id):
     if request.method == 'GET':
         revision_content, initial_instruction = get_revision_content(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id, current_user.id)
-        return render_template('edit_revision.html', filename=filename, revision_id=revision_id, revision_content=revision_content, initial_instruction=initial_instruction)
+        return render_template(
+            'edit_revision.html', 
+            filename=filename,
+            revision_id=revision_id, 
+            revision_content=revision_content, 
+            initial_instruction=initial_instruction)
     elif request.method == 'POST':
         new_content = request.form['new_content']
         new_instruction = request.form['new_instruction']
@@ -146,13 +151,9 @@ def delete_revision(filename, revision_id):
 
 @app.route('/latest_revisions')
 def latest_revisions():
-    return render_template('latest_revisions.html')
-
-@app.route('/get_latest_revisions')
-def get_latest_revisions():
     revisions = get_all_revisions(current_user.id, app.config['REVISIONS_DB'])
-    latest_revisions = [{'filename': revision[1], 'revision_id': revision[0], 'content': revision[2], 'initial_instruction': revision[3]} for revision in revisions]
-    return jsonify(latest_revisions)
+    latest_revisions = [{'filename': revision[2], 'revision_id': revision[0], 'content': revision[1], 'initial_instruction': revision[3]} for revision in revisions]
+    return render_template('latest_revisions.html', revisions=latest_revisions)
 
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):
