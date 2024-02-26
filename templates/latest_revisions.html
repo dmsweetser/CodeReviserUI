@@ -3,27 +3,86 @@
 {% block title %}Executive Review - Code Reviser UI{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Executive Review</h2>
-    <div id="revisionsAccordion">
+<div class="container mt-4 w-100 text-center">
+    <div class="row">
+        <div class="col"></div>
+        <div class="col"><button id="prev-btn" class="btn btn-secondary me-2" disabled>Previous</button></div>
+        <div class="col">
+            <h2>Executive Review</h2>
+        </div>
+        <div class="col"><button id="next-btn" class="btn btn-primary">Next</button></div>
+        <div class="col"></div>
+    </div>
+
+
+
+    <div id="revisions-container">
         {% for revision in revisions %}
-        <h2>{{ revision.filename }}</h2>
-        <form method="post"
-            action="{{ url_for('save_latest_revision', filename=revision.filename, revision_id=revision.revision_id) }}">
-            <div class="mb-3">
-                <label for="new_content" class="form-label">New Content</label>
-                <textarea class="form-control" id="new_content" name="new_content" rows="20"
-                    required>{{ revision.content }}</textarea>
-            </div>
-            <div class="mb-3">
-                <label for="new_instruction" class="form-label">New Instructions</label>
-                <textarea class="form-control" id="new_instruction" name="new_instruction" rows="5"
-                    required>{{ revision.initial_instruction }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-        </form>
-        <hr />
+        <div id="revision-{{ loop.index }}" class="revision-container d-none">
+            <h4>{{ revision.filename }}</h4>
+            <form method="post"
+                action="{{ url_for('save_latest_revision', filename=revision.filename, revision_id=revision.revision_id) }}">
+                <div class="mb-3">
+                    <!-- <label for="new_content-{{ loop.index }}" class="form-label">New Content</label> -->
+                    <textarea class="form-control" id="new_content-{{ loop.index }}" name="new_content" rows="20"
+                        required>{{ revision.content }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <!-- <label for="new_instruction-{{ loop.index }}" class="form-label">New Instructions</label> -->
+                    <textarea class="form-control" id="new_instruction-{{ loop.index }}" name="new_instruction" rows="5"
+                        required>{{ revision.initial_instruction }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+            <hr />
+        </div>
         {% endfor %}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const revisionsContainer = document.getElementById("revisions-container");
+        const nextBtn = document.getElementById("next-btn");
+        const prevBtn = document.getElementById("prev-btn");
+
+        let currentRevisionIndex = 0;
+
+        nextBtn.addEventListener("click", function () {
+            const revision = revisionsContainer.children[currentRevisionIndex];
+            revision.classList.add("d-none");
+            currentRevisionIndex++;
+            showRevision(currentRevisionIndex);
+        });
+
+        prevBtn.addEventListener("click", function () {
+            if (currentRevisionIndex > 0) {
+                const revision = revisionsContainer.children[currentRevisionIndex];
+                revision.classList.add("d-none");
+                currentRevisionIndex--;
+                showRevision(currentRevisionIndex);
+            }
+        });
+
+        // Call showRevision with initial index 0
+        showRevision(currentRevisionIndex);
+
+        function showRevision(index) {
+            if (index < 0 || index >= revisionsContainer.children.length) {
+                return;
+            }
+
+            const revision = revisionsContainer.children[index];
+            revision.classList.remove("d-none");
+            const revisionInputContent = revision.querySelector("textarea[name='new_content']");
+            const revisionInputInstruction = revision.querySelector("textarea[name='new_instruction']");
+
+            revisionInputContent.focus();
+
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === revisionsContainer.children.length - 1;
+        }
+    });
+</script>
+
 {% endblock %}
