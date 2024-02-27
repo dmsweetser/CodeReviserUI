@@ -3,8 +3,8 @@ from lib.config_manager import get_config
 from lib.linter import Linter
 
 def extract_code_from_markdown(markdown):
-   code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
-   return '\n'.join(code_blocks) if code_blocks else markdown.strip()
+    code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', markdown, re.DOTALL)
+    return code_blocks[0].strip() if code_blocks else ""
 
 def run(original_code, llama_model, prompt):
 
