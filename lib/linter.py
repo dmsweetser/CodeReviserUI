@@ -6,10 +6,20 @@ import subprocess
 import tempfile
 import os
 import re
+from lib.config_manager import get_config
 
 class Linter:
     def __init__(self, code, language):
-        self.code = code
+        
+        # Check if extracting from Markdown is enabled in config
+        extract_from_markdown = get_config('extract_from_markdown', '')
+        
+        if extract_from_markdown:
+            code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', code, re.DOTALL)
+            self.code = '\n'.join(code_blocks) if code_blocks else code
+        else:
+            self.code = code
+
         self.language = language
         self.errors = []
 
