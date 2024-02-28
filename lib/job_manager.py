@@ -223,9 +223,9 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         current_errors = linter.lint()
 
         if initial_prompt != "":
-            message = f"<s>[INST]\n{prompt}\nHere is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+            message = f"<s>[INST]Here is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\n\n{prompt}\n\n[/INST]\n"
         else:
-            message = f"<s>[INST]\n{prompt}\nHere is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\n[/INST]\n"
+            message = f"<s>[INST]Here is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\n\n{prompt}\n\n[/INST]\n"
        
         update_job_status(batch_requests_file, job_data['job_id'], "STARTED", clear_file_contents=True)
 
