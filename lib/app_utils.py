@@ -35,7 +35,7 @@ def get_latest_revision(filename, user_id, revisions_db, count=2):
     conn = connect_db(revisions_db)
     c = conn.cursor()
     c.execute("SELECT revision, initial_instruction FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT ?", (filename, user_id, count))
-    revision = c.fetchmany(1)
+    revision = c.fetchone()
     conn.close()
 
     if revision:
