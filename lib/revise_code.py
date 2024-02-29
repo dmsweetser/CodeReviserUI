@@ -26,7 +26,7 @@ def run(original_code, llama_model, prompt):
     if len(revised_code) < .3 * len(original_code):
         print(f"Generated code was too short\n\n\nRevised Code\n\n\n{revised_code}")
         return original_code
-    elif len(revised_code) > 1.7 * len(original_code):
+    elif len(revised_code) > 1.7 * len(original_code) and len(original_code) > 4000:
         print(f"Generated code was too long\n\n\nRevised Code\n\n\n{revised_code}")
         return original_code
     else:
