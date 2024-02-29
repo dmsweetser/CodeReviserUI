@@ -31,15 +31,15 @@ def init_db(revisions_db):
     conn.commit()
     conn.close()
     
-def get_latest_revisions(filename, user_id, revisions_db, count=2):
+def get_latest_revision(filename, user_id, revisions_db, count=2):
     conn = connect_db(revisions_db)
     c = conn.cursor()
-    c.execute("SELECT revision FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT ?", (filename, user_id, count))
-    revisions = c.fetchmany(2)
+    c.execute("SELECT revision, initial_instruction FROM revisions WHERE file_name=? AND user_id=? ORDER BY id DESC LIMIT ?", (filename, user_id, count))
+    revision = c.fetchmany(1)
     conn.close()
 
-    if revisions:
-        return tuple(revision[0] for revision in revisions)
+    if revision:
+        return revision
     else:
         return None
     

@@ -42,7 +42,7 @@ init_db(app.config['REVISIONS_DB'])  # Pass the database path
 def index():
     jobs = load_jobs()
     all_revisions = get_revisions_with_max_rows(current_user.id, app.config['REVISIONS_DB'], max_rows=5)
-    all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2])) for revision in all_revisions)
+    all_revisions = tuple((revision[0], revision[1], quote_plus(revision[2]),revision[3]) for revision in all_revisions)
     return render_template('index.html', jobs=jobs, revisions=all_revisions)
 
 @app.route('/edit_config')

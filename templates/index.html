@@ -158,13 +158,9 @@
                                                     <div class="col">
                                                         <!-- New Input Field for Prompt -->
                                                         <div class="row">
-                                                            <div class="col-auto mt-2">
-                                                                <label for="prompt" class="form-label">Initial
-                                                                    Instructions: </label>
-                                                            </div>
-                                                            <div class="col">
-                                                                <input type="text" name="prompt" class="form-control"
-                                                                    required>
+                                                            <div class="mb-3">
+                                                                <label for="prompt" class="form-label">Instructions</label>
+                                                                <textarea class="form-control" id="prompt" name="prompt" rows="5" required>{{ revision[3] }}</textarea>
                                                             </div>
                                                         </div>
                                                     </div>

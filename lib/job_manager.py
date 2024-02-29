@@ -57,6 +57,7 @@ def update_job_status(job_file, job_id, status, rounds=None, clear_file_contents
                     job['rounds'] = rounds
                 if clear_file_contents is True:
                     job['file_contents'] = None
+                    job['prompt'] = None
                 break
 
         with open(job_file, 'w') as json_file:
@@ -191,13 +192,11 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         user_id = job_data['user_id']
         initial_prompt = job_data['prompt']
 
-        revisions = get_latest_revisions(filename, user_id, revisions_db)
-        if revisions and len(revisions) == 2:
-            existing_revision, prior_revision = revisions
+        revision = get_latest_revision(filename, user_id, revisions_db)
+        if revision:
+            existing_revision = revision[0]
             file_contents = existing_revision
-        elif revisions and len(revisions) == 1:
-            existing_revision = revisions[0]
-            file_contents = existing_revision
+            initial_prompt = revision[1]
         else:
             save_revision(revisions_db, filename, user_id, file_contents, initial_prompt)
 
