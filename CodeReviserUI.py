@@ -171,7 +171,7 @@ def handle_model_not_found(e):
     
 @app.route('/logfile')
 def logfile():
-    return send_file(logger.file_path, as_attachment=True)
+    return send_file(logger.get_file_path(), as_attachment=True)
 
 @app.route('/logs')
 def logs():
