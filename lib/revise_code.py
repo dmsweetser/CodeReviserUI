@@ -1,6 +1,9 @@
 import re
 from lib.config_manager import get_config
 from lib.linter import Linter
+from lib.custom_logger import *
+
+logger = CustomLogger(get_config("log_folder",""))
 
 def run(original_code, llama_model, prompt):
 
@@ -24,10 +27,10 @@ def run(original_code, llama_model, prompt):
         revised_code = '\n'.join(code_blocks) if code_blocks else revised_code
 
     if len(revised_code) < .3 * len(original_code):
-        print(f"Generated code was too short\n\n\nRevised Code\n\n\n{revised_code}")
+        logger.log(f"Generated code was too short\n\n\nRevised Code\n\n\n{revised_code}")
         return original_code
     elif len(revised_code) > 1.7 * len(original_code) and len(original_code) > 4000:
-        print(f"Generated code was too long\n\n\nRevised Code\n\n\n{revised_code}")
+        logger.log(f"Generated code was too long\n\n\nRevised Code\n\n\n{revised_code}")
         return original_code
     else:
         return revised_code

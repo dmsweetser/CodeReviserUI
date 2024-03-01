@@ -7,6 +7,9 @@ import tempfile
 import os
 import re
 from lib.config_manager import get_config
+from lib.custom_logger import *
+
+logger = CustomLogger(get_config("log_folder",""))
 
 class Linter:
     def __init__(self, code, language):
@@ -37,7 +40,7 @@ class Linter:
         except SyntaxError as e:
             self.errors.append(f"Error at line {e.lineno}, offset {e.offset}: {e.msg}")
         sys.stdout = old_stdout
-        print(self.errors)
+        logger.log(self.errors)
         return self.errors
 
     def _lint_javascript(self):
@@ -48,7 +51,7 @@ class Linter:
             error_message = str(e)
             file_line_error = error_message.split("\n")[0].split(":")[1:]
             self.errors.append(error_message)
-            print(self.errors)
+            logger.log(self.errors)
             return self.errors
 
     def _lint_csharp(self):
@@ -89,10 +92,10 @@ class Linter:
                     else:
                         error_message = compiler_output
                     self.errors.append(error_message)
-                print(self.errors)
+                logger.log(self.errors)
                 return self.errors
         except Exception as e:
             error_message = str(e)
             self.errors.append(("", error_message))
-            print(self.errors)
+            logger.log(self.errors)
             return self.errors

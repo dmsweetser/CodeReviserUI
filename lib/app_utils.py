@@ -11,9 +11,13 @@ from llama_cpp import Llama
 
 from lib.config_manager import *
 from lib.job_manager import *
+from lib.custom_logger import *
 
 import sys, os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+logger = CustomLogger(get_config("log_folder",""))
 
 def find_process_by_port(port):
     port = int(port)
@@ -65,7 +69,7 @@ def load_model(model_url, model_folder, model_filename, max_context):
             with open(model_path, 'wb') as model_file:
                 model_file.write(response.content)
         except Exception as e:
-            print("Failed to download or save the model:", str(e))
+            logger.log("Failed to download or save the model:", str(e))
             return None
 
     # Define default llama.cpp parameters
@@ -91,7 +95,7 @@ def load_model(model_url, model_folder, model_filename, max_context):
     try:
         return Llama(model_path, **llama_params)
     except Exception as e:
-        print("Failed to create Llama object:", str(e))
+        logger.log("Failed to create Llama object:", str(e))
         return None
 
 # Helper function to connect to the revisions database

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Log Viewer - Code Reviser UI{% endblock %}
+
+{% block content %}
+<div id="log"></div>
+<style>
+    #log {
+        height: 300px;
+        width: 100%;
+        border: 1px solid #ccc;
+        overflow-y: scroll;
+    }
+</style>
+<script>
+    function fetchLog() {
+        fetch('/logfile')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('log').innerHTML = data;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    setInterval(fetchLog, 1000); // Refresh every second
+
+    fetchLog(); // Initial fetch
+</script>
+{% endblock %}

@@ -10,6 +10,9 @@ import ast
 from threading import Lock
 from lib.revise_code import *
 from lib.linter import Linter
+from lib.custom_logger import *
+
+logger = CustomLogger(get_config("log_folder",""))
 
 def load_jobs():
     jobs = []
@@ -180,7 +183,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
     batch_requests_file = get_config("job_file", "")
 
     try:
-        print(f"Processing {job_data['filename']} with client {current_client}")
+        logger.log(f"Processing {job_data['filename']} with client {current_client}")
         filename = job_data['filename']
         if job_data['file_contents'] is None:
             file_contents = ''
@@ -238,16 +241,16 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         if response.status_code == 200:
             revision = response.content.decode()
             save_revision(revisions_db, filename, user_id, revision, initial_prompt)
-            print(f"Job {job_data['job_id']} completed.")
+            logger.log(f"Job {job_data['job_id']} completed.")
             if rounds != -1:
                 update_job_status(batch_requests_file, job_data['job_id'], "FINISHED")
             else:
                 update_job_status(batch_requests_file, job_data['job_id'], "NEW")
         else:
-            print(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
+            logger.log(f"Job {job_data['job_id']} failed. Status Code: {response.status_code}")
             update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
     except Exception as e:
-        print(str(e))
+        logger.log(str(e))
         update_job_status(batch_requests_file, job_data['job_id'], "ERROR")
 
     client_queue.put(current_client)

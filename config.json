@@ -32,5 +32,6 @@
   "main_gpu": 0,
   "top_p": 0.99,
   "job_file": "jobs.json",
-  "n_ctx": 32768
+  "n_ctx": 32768,
+  "log_folder": "logs/"
 }

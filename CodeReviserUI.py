@@ -9,9 +9,12 @@ from werkzeug.utils import secure_filename
 from lib.config_manager import *
 from lib.job_manager import *
 from lib.app_utils import *
+from lib.custom_logger import *
 from lib import revise_code
 
 app = Flask(__name__)
+
+logger = CustomLogger(get_config("log_folder",""))
 
 current_result = Array('c', b'\0' * 32768)
 
@@ -126,7 +129,7 @@ def compare_revisions(filename, revision_id1):
         comparison_result = compare_two_revisions(app.config['REVISIONS_DB'], unquote_plus(filename), revision_id1, revision_id2, current_user.id, 10000)
         return render_template('compare_revisions.html', filename=filename, revision_id1=revision_id1, revision_id2=revision_id2, comparison_result=comparison_result)
     except Exception as e:
-        print(f"Error comparing revisions: {str(e)}")
+        logger.log(f"Error comparing revisions: {str(e)}")
         return redirect(url_for('index'))
 
 @app.route('/download/<string:filename>/<int:revision_id>', methods=['GET'])
@@ -165,6 +168,14 @@ def save_latest_revision(filename, revision_id):
 @app.errorhandler(FileNotFoundError)
 def handle_model_not_found(e):
     abort(500, description="Model not found")
+    
+@app.route('/logfile')
+def logfile():
+    return send_file(logger.file_path, as_attachment=True)
+
+@app.route('/logs')
+def logs():
+    return render_template('logs.html')
 
 def check_and_define_variable(var_name, default_value):
     if var_name not in globals():
@@ -180,7 +191,7 @@ if __name__ == '__main__':
     process_name, process_pid = find_process_by_port(port_number)
 
     if process_name and process_pid:
-        print(f"App cannot start: Port {port_number} is being used by process '{process_name}' (PID: {process_pid})")
+        logger.log(f"App cannot start: Port {port_number} is being used by process '{process_name}' (PID: {process_pid})")
     else:
         app.run(host=get_config("host",""),port=get_config("port",""))
 

@@ -1,4 +1,8 @@
 from lib.linter import Linter
+from lib.custom_logger import *
+from lib.config_manager import *
+
+logger = CustomLogger(get_config("log_folder",""))
 
 def test_linter():
     python_code = """
@@ -28,18 +32,18 @@ def test_linter():
 
     python_linter = Linter(python_code, "python")
     python_linted_code = python_linter.lint()
-    print("Python Linted Code:")
-    print(python_linted_code)
+    logger.log("Python Linted Code:")
+    logger.log(python_linted_code)
 
     javascript_linter = Linter(javascript_code, "javascript")
     javascript_linted_code = javascript_linter.lint()
-    print("\nJavaScript Linted Code:")
-    print(javascript_linted_code)
+    logger.log("\nJavaScript Linted Code:")
+    logger.log(javascript_linted_code)
 
     csharp_linter = Linter(csharp_code, "csharp")
     csharp_linted_code = csharp_linter.lint()
-    print("\nC# Linted Code:")
-    print(csharp_linted_code)
+    logger.log("\nC# Linted Code:")
+    logger.log(csharp_linted_code)
 
 if __name__ == "__main__":
     test_linter()
