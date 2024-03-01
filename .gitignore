@@ -6,3 +6,4 @@ models/*
 !config.json
 lib/__pycache__
 results*.txt
+logs/*

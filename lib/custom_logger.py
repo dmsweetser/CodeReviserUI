@@ -33,7 +33,7 @@ class CustomLogger:
             self.logger.addHandler(file_handler)
 
     def log(self, message):
-        self.logger.info('{} - {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
+        self._instance.logger.info('{} - {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
         
     def get_file_path(self):
         return self._instance.file_path
