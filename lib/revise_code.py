@@ -28,17 +28,14 @@ def run(original_code, llama_model, prompt):
     if extract_from_markdown:
         code_blocks = re.findall(r'```(?:\w+)?\n(.*?)\n```', revised_code, re.DOTALL)
         revised_code = '\n'.join(code_blocks) if code_blocks else revised_code
-
-    original_tokens = llama_model.tokenize(original_code)
-    new_tokens = llama_model.tokenize(revised_code)
     
     end_time = time.time() # Get the end time
     duration = end_time - start_time # Calculate the duration
 
     print(f"Total duration in seconds: {duration}")
     
-    logger.log(f"Original token count: {len(original_tokens)}")
-    logger.log(f"New token count: {len(new_tokens)}")
+    logger.log(f"Original code length (not tokens): {len(original_code)}")
+    logger.log(f"New code length (not tokens): {len(revised_code)}")
 
     if len(revised_code) < .3 * len(original_code):
         logger.log(f"Generated code was too short")
