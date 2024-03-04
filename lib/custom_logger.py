@@ -27,7 +27,7 @@ class CustomLogger:
             console_handler.setFormatter(formatter)
             self.logger.addHandler(console_handler)
 
-            file_handler = logging.FileHandler(self.file_path, mode='w')  # Change this line
+            file_handler = logging.FileHandler(self.file_path)
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
