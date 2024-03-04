@@ -30,7 +30,6 @@ class CustomLogger:
             file_handler = logging.FileHandler(self.file_path, mode='w')  # Change this line
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(formatter)
-            file_handler.setDelayedFlush(False)  # Add this line
             self.logger.addHandler(file_handler)
 
     def log(self, message):
