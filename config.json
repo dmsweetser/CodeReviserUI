@@ -33,5 +33,6 @@
   "top_p": 0.99,
   "job_file": "jobs.json",
   "n_ctx": 32768,
-  "log_folder": "logs/"
+  "log_folder": "logs/",
+  "wrap_up_cutoff": 25000
 }

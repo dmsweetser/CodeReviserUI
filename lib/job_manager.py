@@ -207,7 +207,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         default_prompt = get_config('default_prompt', "")
         revision_prompt = get_config('revision_prompt', "") 
 
-        if "TODO" in file_contents.upper() or "PLACEHOLDER" in file_contents.upper():
+        if "TODO" in file_contents.upper() or "PLACEHOLDER" in file_contents.upper() or len(file_contents) > get_config('wrap_up_cutoff',''):
             # Use the provided prompt if given, else use the one from config
             prompt = revision_prompt
         else:
