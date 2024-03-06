@@ -10,7 +10,6 @@ class CustomLogger:
         if not CustomLogger._instance:
             CustomLogger._instance = self
 
-            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
             self.log_folder = log_folder
 
             # Create the logs folder if it doesn't exist
@@ -19,6 +18,7 @@ class CustomLogger:
             self.logger = logging.getLogger("CodeRevisorUI")
             self.logger.setLevel(logging.INFO)
 
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
             self.file_path = os.path.join(self.log_folder, f"log_{current_date}.txt")
 
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -33,6 +33,8 @@ class CustomLogger:
             self.logger.addHandler(file_handler)
 
     def log(self, message):
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.file_path = os.path.join(self.log_folder, f"log_{current_date}.txt")
         self._instance.logger.info('{} - {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
 
     def get_file_path(self):
