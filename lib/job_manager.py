@@ -220,7 +220,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
             language = "javascript"
         elif "c#" in initial_prompt.lower():
             language = "csharp"
-        linter = Linter(file_contents, language)
+        linter = Linter(file_contents, language, logger)
         current_errors = linter.lint()
 
         if initial_prompt != "":

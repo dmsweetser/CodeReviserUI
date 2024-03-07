@@ -83,7 +83,7 @@ def process_request():
     file_contents = request.form.get('fileContents', '')
 
     llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], logger)
-    revision = revise_code.run(file_contents, llm, prompt)
+    revision = revise_code.run(file_contents, llm, prompt, logger)
 
     del llm
     gc.collect()
