@@ -82,7 +82,7 @@ def process_request():
     prompt = request.form.get('prompt', '')
     file_contents = request.form.get('fileContents', '')
 
-    llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], logger)
     revision = revise_code.run(file_contents, llm, prompt)
 
     del llm
@@ -92,7 +92,7 @@ def process_request():
 
 @app.route('/start-batch', methods=['GET'])
 def start_batch():
-    start_batch_job(app.config['REVISIONS_DB'], app.config['MODEL_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'])
+    start_batch_job(app.config['REVISIONS_DB'], app.config['MODEL_FOLDER'], app.config['MODEL_URL'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], logger)
     return redirect(url_for('index'))
 
 @app.route('/clear_batch_job/<int:job_id>', methods=['POST'])

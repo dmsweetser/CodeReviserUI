@@ -4,7 +4,7 @@
   "use_mlock": false,
   "n_threads": 0,
   "max_file_size": 10485760,
-  "model_path": "mistral-7b-instruct-v0.2.Q4_K_M.gguf",
+  "model_path": "mistral-7b-instruct-v0.2.Q8_0.gguf",
   "verbose": true,
   "model_folder": "models/",
   "temperature": 1,
@@ -15,8 +15,8 @@
   "default_prompt": "Generate ONLY a full revision of this code that completely implements all features and suggests 5 additional new features.",
   "n_gpu_layers": 33,
   "tensor_split": "",
-  "model": "mistral-7b-instruct-v0.2.Q4_K_M.gguf",
-  "model_url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
+  "model": "mistral-7b-instruct-v0.2.Q8_0.gguf",
+  "model_url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf",
   "port": "5031",
   "rope_freq_base": 0,
   "typical_p": 0.68,
@@ -34,5 +34,5 @@
   "job_file": "jobs.json",
   "n_ctx": 32768,
   "log_folder": "logs/",
-  "wrap_up_cutoff": 25000
+  "wrap_up_cutoff": 35000
 }

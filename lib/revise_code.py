@@ -4,9 +4,7 @@ from lib.linter import Linter
 from lib.custom_logger import *
 import time
 
-logger = CustomLogger(get_config("log_folder",""))
-
-def run(original_code, llama_model, prompt):
+def run(original_code, llama_model, prompt, logger):
 
     start_time = time.time() # Get the start time
 
@@ -37,10 +35,10 @@ def run(original_code, llama_model, prompt):
     logger.log(f"Original code length (not tokens): {len(original_code)}")
     logger.log(f"New code length (not tokens): {len(revised_code)}")
 
-    if len(revised_code) < .3 * len(original_code):
+    if len(revised_code) < .5 * len(original_code):
         logger.log(f"Generated code was too short")
         return original_code
-    elif len(revised_code) > 1.7 * len(original_code) and len(original_code) > 4000:
+    elif len(revised_code) > 1.7 * len(original_code) and len(original_code) > 10000:
         logger.log(f"Generated code was too long")
         return original_code
     else:

@@ -12,7 +12,6 @@ from lib.revise_code import *
 from lib.linter import Linter
 from lib.custom_logger import *
 
-logger = CustomLogger(get_config("log_folder",""))
 
 def load_jobs():
     jobs = []
@@ -66,11 +65,11 @@ def update_job_status(job_file, job_id, status, rounds=None, clear_file_contents
         with open(job_file, 'w') as json_file:
             json.dump(existing_contents, json_file, indent=2)
 
-def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context):
+def start_batch_job(revisions_db, model_folder, model_url, model_filename, max_context, logger):
 
     job_file = get_config("job_file", "")
 
-    batch_process = Process(target=process_batch, args=(job_file, revisions_db, model_folder, model_url, model_filename, max_context))
+    batch_process = Process(target=process_batch, args=(job_file, revisions_db, model_folder, model_url, model_filename, max_context, logger))
     batch_process.start()
 
 def add_job(max_file_size, filename, file_contents, model_folder, revisions_db, current_user, rounds, prompt):
@@ -130,7 +129,7 @@ def clear_job(job_id):
     with open(batch_requests_file, 'w') as json_file:
         json.dump(existing_contents, json_file, indent=2)
 
-def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context):
+def process_batch(batch_requests_file, revisions_db, model_folder, model_url, model_filename, max_context, logger):
     config = load_config()
     batch_requests_file = get_config("job_file", "")
 
@@ -171,14 +170,14 @@ def process_batch(batch_requests_file, revisions_db, model_folder, model_url, mo
 
             client_url = f'http://{current_client}'
 
-            process = Process(target=process_job, args=(revisions_db, request_data, client_url, client_queue, current_client))
+            process = Process(target=process_job, args=(revisions_db, request_data, client_url, client_queue, current_client, logger))
             processes.append(process)
             process.start()
 
         for process in processes:
             process.join()
 
-def process_job(revisions_db, job_data, client_url, client_queue, current_client):
+def process_job(revisions_db, job_data, client_url, client_queue, current_client, logger):
 
     batch_requests_file = get_config("job_file", "")
 

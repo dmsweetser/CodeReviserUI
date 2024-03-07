@@ -59,7 +59,7 @@ def save_revision(revisions_db, filename, user_id, revision, initial_instruction
     # Close the connection to the database
     conn.close()
 
-def load_model(model_url, model_folder, model_filename, max_context):
+def load_model(model_url, model_folder, model_filename, max_context, logger):
 
     model_path = model_folder + model_filename
 

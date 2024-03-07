@@ -22,7 +22,7 @@ def load_config():
        missing_keys = set(config.keys()) - set(user_config.keys())
 
        if missing_keys:
-           logger.log(f"Missing keys in user_config.json: {missing_keys}")
+           raise Exception(f"Missing keys in user_config.json: {missing_keys}")
 
            for key in missing_keys:
                user_config[key] = config[key]
@@ -60,5 +60,3 @@ def update_config(key, value):
 
    with open(user_config_file, 'w') as file:
        json.dump(config, file, indent=2)
-       
-logger = CustomLogger(get_config("log_folder",""))

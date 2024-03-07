@@ -34,7 +34,7 @@ class CustomLogger:
 
     def log(self, message):
         current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        self.file_path = os.path.join(self.log_folder, f"log_{current_date}.txt")
+        self.file_path = os.path.join(self._instance.log_folder, f"log_{current_date}.txt")
         self._instance.logger.info('{} - {}'.format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), message))
 
     def get_file_path(self):
