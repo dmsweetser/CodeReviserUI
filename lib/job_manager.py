@@ -226,6 +226,7 @@ def process_job(revisions_db, job_data, client_url, client_queue, current_client
         build_error = ""
         if "[BUILDERROR]" in file_contents:
             build_error = file_contents.split("[BUILDERROR]")[1]
+            file_contents = file_contents.split("[BUILDERROR]")[0]
             
         if initial_prompt != "" and build_error != "":
             message = f"<s>[INST]Here is the original instruction:\n{initial_prompt}\nHere is the current code:\n```\n{file_contents}\n```\nHere are the current compiler errors:\n{current_errors}\nHere is the latest build error when I try to run the code:\n{build_error}\n\n{prompt}\n\n[/INST]\n"
