@@ -92,6 +92,7 @@ def git_init(path):
     subprocess.check_call(["git", "init", path])
     
 def git_commit(path, message):
+    subprocess.check_call(["git", "add", "."], cwd=path)
     subprocess.check_call(["git", "commit", "-m", message, path])
 
 # Run python script and do it again
