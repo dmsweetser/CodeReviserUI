@@ -79,8 +79,10 @@ def queue():
 @app.route('/process_request', methods=['POST'])
 def process_request():
 
-    prompt = request.form.get('prompt', '')
-    file_contents = request.form.get('fileContents', '')
+    data = request.get_json() if request.is_json else request.form
+
+    prompt = data.get('prompt', '')
+    file_contents = data.get('fileContents', '')
 
     llm = load_model(app.config['MODEL_URL'], app.config['MODEL_FOLDER'], app.config['MODEL_FILENAME'], app.config['MAX_CONTEXT'], logger)
     revision = revise_code.run(file_contents, llm, prompt, logger)
