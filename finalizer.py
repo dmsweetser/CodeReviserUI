@@ -11,18 +11,17 @@ from urllib.error import URLError
 
 # Define variables
 client_url = "http://127.0.0.1:5031/process_request"
-output_path = "finalizer/output"
 logging.basicConfig(filename='finalizer.log', level=logging.INFO)
 
 def log_message(message):
     logging.info(message)
 
-def run_python_script(python_script_path):
-    
+def run_python_script(python_script_path, output_path):
+    os.makedirs(output_path, exist_ok=True)
     execution_date = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     
     # Activate virtual environment
-    venv_path = os.path.join(os.getcwd(), "/venv/scripts")
+    venv_path = f"{os.getcwd()}\\venv\\scripts"
     os.chdir(venv_path)
     os.system("activate")
 
@@ -34,8 +33,9 @@ def run_python_script(python_script_path):
         process.wait()
         output_file = os.path.join(output_path, f"{execution_date}.log")
         with open(output_file, 'wb') as out_file:
-            out_file.write(process.stdout.read())
+            out_file.write(f"{process.stdout.read()}\n\n{process.stderr.read()}".encode())
 
+        with open(output_file, "r") as output:
             message = f'''
 <s>[INST]Here is the current code:
 ```
@@ -43,7 +43,7 @@ def run_python_script(python_script_path):
 ```
 When I run the code, this is the current output:
 ```
-{outfile.read()}
+{output.read()}
 ```
 Generate ONLY a full revision of this code that completely implements all features and addresses issues identified in the output above.
 [/INST]
@@ -71,4 +71,6 @@ Generate ONLY a full revision of this code that completely implements all featur
 
 # Run python script and do it again
 while True:
-    run_python_script("game.py")
+    run_python_script(
+        "C:\\Files\\source\\unversioned\\snake_game_infinite\\game.py",
+        "C:\\Files\\source\\unversioned\\snake_game_infinite\\finalizer\\")
