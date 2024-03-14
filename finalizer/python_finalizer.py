@@ -59,11 +59,11 @@ def run_python_script(git_path, venv_path, python_script_path):
         response = urlopen(req)
         response_content = response.read()
         revised_code = response_content.decode()        
-        
-        if len(revised_code) < .9 * len(original_code):
+       
+        if len(revised_code) < .99 * len(original_code):
             log_message(f"Generated code was too short")
             revised_code = original_code
-        elif len(revised_code) > 1.2 * len(original_code) and len(original_code) > 10000:
+        elif len(revised_code) > 1.1 * len(original_code) and len(original_code) > 10000:
             log_message(f"Generated code was too long")
             revised_code = original_code
         

@@ -29,11 +29,11 @@ echo Virtual environment activated successfully.
 REM Display diagnostic information
 echo.
 echo --- Script Execution ---
-echo Running Python script: finalizer.py
+echo Running Python script: python_finalizer.py
 echo.
 
 REM Run your Python script within the virtual environment
-python finalizer.py
+python python_finalizer.py
 
 REM Check the exit code of the script
 if %errorlevel% neq 0 (
