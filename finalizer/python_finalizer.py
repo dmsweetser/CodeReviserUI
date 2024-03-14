@@ -36,6 +36,7 @@ def run_python_script(git_path, venv_path, python_script_path):
     script_args = [sys.executable, python_script_path]
     script_args += sys.argv[1:]
     with open(python_script_path, 'r') as file:
+        original_code = file.read()
         process = subprocess.Popen(script_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
         output_file = f"finalizer_{execution_date}.log"
@@ -43,8 +44,7 @@ def run_python_script(git_path, venv_path, python_script_path):
             out_file.write(f"{process.stdout.read()}\n\n{process.stderr.read()}".encode())
 
         with open(output_file, "r") as output:
-            message = f"<s>[INST]Here is the current code:\n```{file.read()}\n```\nWhen I run the code, this is the current output:\n```\n{output.read()}\n```\nGenerate ONLY a full revision of this code that completely implements all features and addresses issues identified in the output above.\n[/INST]"
-        original_code = file.read()
+            message = f"<s>[INST]Here is the current code:\n```{original_code}\n```\nWhen I run the code, this is the current output:\n```\n{output.read()}\n```\nGenerate ONLY a full revision of this code that completely implements all features and addresses issues identified in the output above.\n[/INST]"
         
     # Get response from web request
     data = {
@@ -63,10 +63,10 @@ def run_python_script(git_path, venv_path, python_script_path):
         log_message(f"Revised code length: {len(revised_code)}")
         log_message(f"Original code length: {len(original_code)}")
        
-        if len(revised_code) < .99 * len(original_code):
+        if len(revised_code) < .95 * len(original_code):
             log_message(f"Generated code was too short")
             revised_code = original_code
-        elif len(revised_code) > 1.1 * len(original_code) and len(original_code) > 10000:
+        elif len(revised_code) > 1.05 * len(original_code) and len(original_code) > 10000:
             log_message(f"Generated code was too long")
             revised_code = original_code
         
