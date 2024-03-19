@@ -31,6 +31,8 @@ def run_python_script(git_path, venv_path, python_script_path):
     # Activate virtual environment
     os.chdir(venv_path)
     os.system("activate")
+    
+    build_output = ""
 
     # Run python script and pipe output to a datetime_stamped file
     script_args = [sys.executable, python_script_path]
@@ -39,12 +41,11 @@ def run_python_script(git_path, venv_path, python_script_path):
         original_code = file.read()
         process = subprocess.Popen(script_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
-        output_file = f"finalizer_{execution_date}.log"
-        with open(output_file, 'wb') as out_file:
-            out_file.write(f"{process.stdout.read()}\n\n{process.stderr.read()}".encode())
+        build_output = f"{process.stdout.read().decode()}\n\n{process.stderr.read().decode()}"
+        log_message(build_output)
+        message = f"<s>[INST]Here is the current code:\n```{original_code}\n```\nWhen I run the code, this is the current output:\n\n{build_output}\n\nGenerate ONLY a full revision of this code.\n[/INST]"
+        
 
-        with open(output_file, "r") as output:
-            message = f"<s>[INST]Here is the current code:\n```{original_code}\n```\nWhen I run the code, this is the current output:\n```\n{output.read()}\n```\nGenerate ONLY a full revision of this code that completely implements all features and addresses issues identified in the output above.\n[/INST]"
         
     # Get response from web request
     data = {
@@ -69,6 +70,11 @@ def run_python_script(git_path, venv_path, python_script_path):
         elif len(revised_code) > 1.05 * len(original_code) and len(original_code) > 10000:
             log_message(f"Generated code was too long")
             revised_code = original_code
+            
+        # App-Specific Handling
+        if '''if __name__ == "__main__":''' not in revised_code:
+            revised_code = original_code
+        # END App-Specific Handling
         
         os.remove(python_script_path)
         
@@ -98,7 +104,6 @@ def git_commit(path, message):
     subprocess.check_call(["git", "add", "."], cwd=path)
     subprocess.check_call(["git", "commit", "-m", message, path])
 
-# Run python script and do it again
 while True:
     run_python_script(
         "C:\\Files\\source\\unversioned\\snake_game_infinite\\",
